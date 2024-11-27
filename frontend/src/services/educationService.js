@@ -21,10 +21,16 @@ export const educationService = {
 
     // 数学游戏
     getMathProblems: async (grade = 1, count = 10) => {
-        const response = await axios.get(`${API_URL}/math/problems`, {
-            params: { grade, count }
-        });
-        return response.data;
+        try {
+            const response = await axios.get(`${API_URL}/math/problems`, {
+                params: { grade, count },
+                timeout: 10000  // 设置超时时间
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error getting math problems:', error);
+            throw new Error('Kunne ikke laste oppgaver. Prøv igjen senere.');
+        }
     },
 
     checkMathAnswer: async (problem_id, answer) => {
@@ -65,5 +71,34 @@ export const educationService = {
             answer
         });
         return response.data;
+    },
+
+    // 添加获取数学解释的方法
+    getMathExplanation: async (question, answer, type, age) => {
+        try {
+            const response = await axios.post(`${API_URL}/math/explain`, {
+                question,
+                answer,
+                type,
+                age
+            });
+            return response.data.explanation;
+        } catch (error) {
+            console.error('Error getting math explanation:', error);
+            return 'Kunne ikke hente forklaring.';
+        }
+    },
+
+    // 添加获取相似题目的方法
+    getSimilarProblems: async (age, problemType, count) => {
+        try {
+            const response = await axios.get(`${API_URL}/math/similar`, {
+                params: { age, type: problemType, count }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error getting similar problems:', error);
+            return [];
+        }
     }
 }; 

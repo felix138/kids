@@ -114,24 +114,51 @@ class GrokClient:
             logger.error(f"Error checking answer: {str(e)}")
             return self._fallback_answer_check(user_answer, correct_answer)
 
-    def _create_math_prompt(self, grade: int, problem_type: str) -> str:
-        """创建数学题目提示"""
-        prompts = {
-            1: {
-                "basic": "Create a simple addition or subtraction problem for 1st grade with numbers under 20. Format: 'Question: [question] Answer: [number]'",
-                "word_problem": "Create a simple word problem with addition for 1st grade. Format: 'Question: [question] Answer: [number]'"
+    def _create_math_prompt(self, age: int, problem_type: str) -> str:
+        """根据年龄创建数学题目提示"""
+        base_prompt = (
+            f"Create a math problem suitable for a {age}-year-old Norwegian child. "
+            f"The child is in grade {age-6+1}. "
+            "Format your response exactly as: 'Question: [question in Norwegian] Answer: [number]'"
+        )
+
+        age_specific_prompts = {
+            6: {
+                "basic": base_prompt + " Use numbers under 20, focus on basic addition and subtraction.",
+                "word_problem": base_prompt + " Create a simple word problem about everyday situations.",
             },
-            2: {
-                "basic": "Create a multiplication or division problem for 2nd grade with numbers under 100. Format: 'Question: [question] Answer: [number]'",
-                "word_problem": "Create a word problem with multiplication for 2nd grade. Format: 'Question: [question] Answer: [number]'"
+            7: {
+                "basic": base_prompt + " Use numbers under 100, include addition and subtraction.",
+                "word_problem": base_prompt + " Create a word problem about shopping or sharing.",
             },
-            3: {
-                "basic": "Create a mixed arithmetic problem for 3rd grade with numbers under 1000. Format: 'Question: [question] Answer: [number]'",
-                "word_problem": "Create a complex word problem for 3rd grade. Format: 'Question: [question] Answer: [number]'",
-                "geometry": "Create a simple geometry problem about perimeter or area for 3rd grade. Format: 'Question: [question] Answer: [number]'"
+            8: {
+                "basic": base_prompt + " Include multiplication tables up to 5, numbers under 100.",
+                "word_problem": base_prompt + " Create a word problem involving groups or sets.",
+            },
+            9: {
+                "basic": base_prompt + " Include all multiplication tables and simple division.",
+                "word_problem": base_prompt + " Create a word problem about measurements or time.",
+            },
+            10: {
+                "basic": base_prompt + " Include fractions and decimals.",
+                "word_problem": base_prompt + " Create a problem about percentages or proportions.",
+                "geometry": base_prompt + " Create a problem about area or perimeter."
+            },
+            11: {
+                "basic": base_prompt + " Include more complex fractions and decimals.",
+                "word_problem": base_prompt + " Create a multi-step problem.",
+                "geometry": base_prompt + " Include problems about volume or angles."
+            },
+            12: {
+                "basic": base_prompt + " Include negative numbers and basic algebra.",
+                "word_problem": base_prompt + " Create a problem involving ratios or rates.",
+                "geometry": base_prompt + " Include problems about circles or 3D shapes."
             }
         }
-        return prompts.get(grade, {}).get(problem_type, prompts[1]["basic"])
+
+        # 获取年龄特定的提示，如果没有则使用基本提示
+        age_prompts = age_specific_prompts.get(age, age_specific_prompts[6])
+        return age_prompts.get(problem_type, age_prompts["basic"])
 
     def _parse_math_response(self, response: str) -> dict:
         """解析Grok的响应"""
@@ -148,7 +175,13 @@ class GrokClient:
                 return None
                 
             question = question_answer[0].strip()
-            answer = float(question_answer[1].strip())
+            # 处理挪威语数字格式（将逗号替换为小数点）
+            answer_str = question_answer[1].strip().replace(',', '.')
+            try:
+                answer = float(answer_str)
+            except ValueError:
+                logger.error(f"Could not convert answer to float: {answer_str}")
+                return None
             
             logger.debug(f"Parsed question: {question}")
             logger.debug(f"Parsed answer: {answer}")
@@ -184,5 +217,53 @@ class GrokClient:
             "correct": is_correct,
             "feedback": feedback
         }
+
+    async def generate_explanation(
+        self,
+        question: str,
+        answer: float,
+        problem_type: str,
+        age: int
+    ) -> str:
+        """生成题目解释"""
+        try:
+            prompt = (
+                f"Explain this math problem to a {age}-year-old Norwegian child:\n"
+                f"Problem: {question}\n"
+                f"Answer: {answer}\n"
+                "Provide a step-by-step explanation in Norwegian, "
+                "using simple language and maybe a relevant example."
+            )
+            
+            payload = {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a patient and encouraging math teacher for children."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "model": "grok-beta",
+                "temperature": 0.7,
+                "max_tokens": 250
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.api_base,
+                    headers=self.headers,
+                    json=payload
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data['choices'][0]['message']['content']
+                    else:
+                        return "Beklager, kunne ikke generere forklaring."
+        except Exception as e:
+            logger.error(f"Error generating explanation: {e}")
+            return "Beklager, kunne ikke generere forklaring."
 
 grok_client = GrokClient() 

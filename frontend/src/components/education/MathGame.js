@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { educationService } from '../../services/educationService';
+import { parseFraction, formatAnswer } from '../../utils/mathUtils';
 
 function MathGame() {
     // 状态管理
-    const [grade, setGrade] = useState(1);
+    const [grade, setGrade] = useState(6);
     const [problemCount, setProblemCount] = useState(10);
     const [gameStarted, setGameStarted] = useState(false);
     const [problems, setProblems] = useState([]);
@@ -16,6 +17,13 @@ function MathGame() {
     const [score, setScore] = useState(0);
     const [speaking, setSpeaking] = useState(false);
     const [listening, setListening] = useState(false);
+    const [showHint, setShowHint] = useState(false);
+    const [hint, setHint] = useState('');
+    const [canMoveNext, setCanMoveNext] = useState(true);  // 是否可以进入下一题
+    const [explanation, setExplanation] = useState('');    // 问题解释
+    const [lastWrongType, setLastWrongType] = useState(null); // 上次错误的题目类型
+    const [isGenerating, setIsGenerating] = useState(false);  // 添加生成状态
+    const [loadedCount, setLoadedCount] = useState(0);        // 已加载题目数量
 
     // 语音合成
     const speak = (text) => {
@@ -42,7 +50,19 @@ function MathGame() {
             recognition.onend = () => setListening(false);
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                // 提取数字
+                // 支持口述分数
+                if (transcript.includes('delt på') || transcript.includes('over')) {
+                    const parts = transcript.split(/delt på|over/);
+                    if (parts.length === 2) {
+                        const num1 = parseFloat(parts[0].replace(/[^0-9]/g, ''));
+                        const num2 = parseFloat(parts[1].replace(/[^0-9]/g, ''));
+                        if (!isNaN(num1) && !isNaN(num2)) {
+                            setUserAnswer(`${num1}/${num2}`);
+                            return;
+                        }
+                    }
+                }
+                // 普通数字处理
                 const number = parseFloat(transcript.replace(/[^0-9.]/g, ''));
                 if (!isNaN(number)) {
                     setUserAnswer(number.toString());
@@ -57,15 +77,40 @@ function MathGame() {
     const loadProblems = async () => {
         try {
             setLoading(true);
-            const data = await educationService.getMathProblems(grade, problemCount);
-            setProblems(data);
-            setCurrentProblem(data[0]);
-            setGameStarted(true);
+            setIsGenerating(true);
+            setGameStarted(true);  // 立即开始游戏
+            
+            // 先生成第一道题目
+            const firstProblem = await educationService.getMathProblems(grade, 1);
+            setProblems([firstProblem[0]]);
+            setCurrentProblem(firstProblem[0]);
+            setLoadedCount(1);
             setLoading(false);
+
+            // 在后台继续生成其他题目
+            generateRemainingProblems();
         } catch (error) {
             console.error('Feil ved lasting av matematikkoppgaver:', error);
             setError('Kunne ikke laste oppgaver. Prøv igjen senere.');
             setLoading(false);
+            setIsGenerating(false);
+        }
+    };
+
+    // 添加后台生成题目的函数
+    const generateRemainingProblems = async () => {
+        try {
+            const batchSize = 2;  // 每次生成2道题
+            for (let i = 1; i < problemCount; i += batchSize) {
+                const count = Math.min(batchSize, problemCount - i);
+                const newProblems = await educationService.getMathProblems(grade, count);
+                setProblems(prev => [...prev, ...newProblems]);
+                setLoadedCount(prev => prev + count);
+            }
+        } catch (error) {
+            console.error('Error generating remaining problems:', error);
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -80,37 +125,77 @@ function MathGame() {
         if (!userAnswer) return;
 
         try {
+            const parsedAnswer = parseFraction(userAnswer);
+            if (isNaN(parsedAnswer)) {
+                setFeedback('Ugyldig svar. Prøv igjen!');
+                return;
+            }
+
             const result = await educationService.checkMathAnswer(
                 currentProblem.id,
-                parseFloat(userAnswer)
+                parsedAnswer
             );
 
             if (result.correct) {
                 setScore(score + 1);
                 setFeedback(result.feedback);
                 speak(result.feedback);
+                setCanMoveNext(false);
+                setLastWrongType(null);
             } else {
-                setFeedback(result.feedback);
-                speak(result.feedback);
+                setLastWrongType(currentProblem.type);
+                const correctAnswer = formatAnswer(currentProblem.answer);
+                const feedback = `Ikke riktig. Det riktige svaret er ${correctAnswer}.`;
+                setFeedback(feedback);
+                speak(feedback);
+                setCanMoveNext(false);
+                
+                const explanation = await educationService.getMathExplanation(
+                    currentProblem.question,
+                    correctAnswer,
+                    currentProblem.type,
+                    grade
+                );
+                setExplanation(explanation);
             }
 
-            setTimeout(() => {
-                if (currentIndex < problems.length - 1) {
-                    setCurrentIndex(currentIndex + 1);
-                    setCurrentProblem(problems[currentIndex + 1]);
-                    setUserAnswer('');
-                    setFeedback('');
-                } else {
-                    const finalScore = score + (result.correct ? 1 : 0);
-                    const finalFeedback = `Gratulerer! Du har fullført alle oppgavene! Din poengsum: ${finalScore}/${problems.length}`;
-                    setFeedback(finalFeedback);
-                    speak(finalFeedback);
-                    setGameStarted(false);
-                }
-            }, 2000);
+            if (currentIndex >= problems.length - 1) {
+                const finalScore = score + (result.correct ? 1 : 0);
+                const finalFeedback = `Gratulerer! Du har fullført alle oppgavene! Din poengsum: ${finalScore}/${problems.length}`;
+                setFeedback(finalFeedback);
+                speak(finalFeedback);
+                setGameStarted(false);
+            }
         } catch (error) {
             console.error('Error submitting answer:', error);
             setFeedback(error.message || 'Det oppstod en feil. Prøv igjen.');
+        }
+    };
+
+    // 添加下一题按钮处理函数
+    const handleNextProblem = async () => {
+        if (currentIndex < problems.length - 1) {
+            // 如果上一题答错了，生成两道相似题目
+            if (lastWrongType) {
+                try {
+                    const similarProblems = await educationService.getSimilarProblems(
+                        grade,
+                        lastWrongType,
+                        2
+                    );
+                    // 插入相似题目到当前位置后
+                    problems.splice(currentIndex + 1, 0, ...similarProblems);
+                } catch (error) {
+                    console.error('Error getting similar problems:', error);
+                }
+            }
+            
+            setCurrentIndex(currentIndex + 1);
+            setCurrentProblem(problems[currentIndex + 1]);
+            setUserAnswer('');
+            setFeedback('');
+            setExplanation('');
+            setCanMoveNext(true);
         }
     };
 
@@ -128,6 +213,27 @@ function MathGame() {
         }
     }, [currentProblem]);
 
+    // 添加提示系统
+    const generateHint = () => {
+        const problem = currentProblem;
+        if (!problem) return;
+
+        let hintText = '';
+        if (problem.type === 'percentage') {
+            hintText = 'For å finne prosent, del med 100 og gang med prosentsatsen.';
+        } else if (problem.type === 'area') {
+            hintText = 'Areal = lengde × bredde';
+        } else if (problem.type === 'volume') {
+            hintText = 'Volum av kube = lengde × bredde × høyde';
+        } else if (problem.type === 'fraction') {
+            hintText = 'Husk å finne fellesnevner først!';
+        } else if (problem.type === 'algebra') {
+            hintText = 'Prøv å løse ligningen steg for steg.';
+        }
+        setHint(hintText);
+        setShowHint(true);
+    };
+
     // 游戏设置界面
     if (!gameStarted) {
         return (
@@ -137,16 +243,20 @@ function MathGame() {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Velg klassetrinn:
+                                Velg alder:
                             </label>
                             <select
                                 value={grade}
                                 onChange={(e) => setGrade(parseInt(e.target.value))}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
                             >
-                                <option value={1}>1. klasse</option>
-                                <option value={2}>2. klasse</option>
-                                <option value={3}>3. klasse</option>
+                                <option value={6}>6 år</option>
+                                <option value={7}>7 år</option>
+                                <option value={8}>8 år</option>
+                                <option value={9}>9 år</option>
+                                <option value={10}>10 år</option>
+                                <option value={11}>11 år</option>
+                                <option value={12}>12 år</option>
                             </select>
                         </div>
                         <div>
@@ -197,33 +307,58 @@ function MathGame() {
     // 游戏界面
     return (
         <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Matematikkspill - {grade}. klasse</h2>
+            <h2 className="text-xl font-bold mb-4">Matematikkspill - {grade} år</h2>
             <div className="bg-white p-6 rounded-lg shadow-lg">
+                {/* 添加加载进度显示 */}
+                {isGenerating && (
+                    <div className="mb-4 text-sm text-gray-600">
+                        Laster oppgaver: {loadedCount}/{problemCount}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                            <div 
+                                className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                                style={{ width: `${(loadedCount/problemCount) * 100}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex justify-between mb-4 text-sm text-gray-600">
-                    <div>Oppgave {currentIndex + 1} av {problems.length}</div>
+                    <div>Oppgave {currentIndex + 1} av {problemCount}</div>
                     <div>Poeng: {score}</div>
                 </div>
 
                 <div className="mb-6">
                     <p className="text-lg font-medium">{currentProblem?.question}</p>
-                    <button
-                        onClick={readQuestion}
-                        disabled={speaking}
-                        className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                    >
-                        {speaking ? 'Leser...' : 'Les spørsmål'}
-                    </button>
+                    <div className="flex space-x-2 mt-2">
+                        <button
+                            onClick={readQuestion}
+                            disabled={speaking}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            {speaking ? 'Leser...' : 'Les spørsmål'}
+                        </button>
+                        <button
+                            onClick={generateHint}
+                            className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                            Vis hint
+                        </button>
+                    </div>
+                    {showHint && hint && (
+                        <div className="mt-2 p-2 bg-yellow-100 text-yellow-800 rounded">
+                            💡 {hint}
+                        </div>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="flex space-x-2">
                         <input
-                            type="number"
-                            step="any"
+                            type="text"
                             value={userAnswer}
                             onChange={(e) => setUserAnswer(e.target.value)}
                             className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Skriv inn ditt svar..."
+                            placeholder="Skriv inn ditt svar (f.eks: 3/8 eller 0.375)..."
                         />
                         <button
                             type="button"
@@ -254,6 +389,24 @@ function MathGame() {
                     }`}>
                         {feedback}
                     </div>
+                )}
+
+                {/* 添加解释部分 */}
+                {explanation && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <h3 className="font-bold mb-2">Forklaring:</h3>
+                        <p className="text-gray-700">{explanation}</p>
+                    </div>
+                )}
+
+                {/* 添加下一题按钮 */}
+                {!canMoveNext && (
+                    <button
+                        onClick={handleNextProblem}
+                        className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
+                    >
+                        {currentIndex < problems.length - 1 ? 'Neste oppgave' : 'Avslutt spill'}
+                    </button>
                 )}
             </div>
         </div>

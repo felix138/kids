@@ -225,54 +225,35 @@ async def generate_math_problems(grade: int, count: int = 10) -> List[dict]:
     logger.debug(f"Problem cache after generation: {_problem_cache}")
     return problems
 
-def generate_fallback_problem(grade: int, problem_id: int) -> dict:
-    """生成单个备用题目"""
-    if grade == 1:
-        # 1年级：加减法，数字范围1-20
-        num1 = random.randint(1, 10)
-        num2 = random.randint(1, 10)
-        op = random.choice(['+', '-'])
-        if op == '+':
-            answer = num1 + num2
-            question = f"{num1} + {num2} = ?"
-        else:
-            # 确保减法结果为正数
-            if num1 < num2:
-                num1, num2 = num2, num1
-            answer = num1 - num2
-            question = f"{num1} - {num2} = ?"
+def generate_fallback_problem(age: int, problem_id: int) -> dict:
+    """根据年龄生成备用题目"""
+    # 计算大致对应的年级
+    grade = age - 6 + 1  # 6岁对应1年级
     
-    elif grade == 2:
-        # 2年级：加减乘，数字范围1-100
-        op = random.choice(['+', '-', '*'])
-        if op == '*':
-            num1 = random.randint(1, 10)
-            num2 = random.randint(1, 10)
-        else:
-            num1 = random.randint(1, 50)
-            num2 = random.randint(1, 50)
-        
-        if op == '+':
-            answer = num1 + num2
-            question = f"{num1} + {num2} = ?"
-        elif op == '-':
-            if num1 < num2:
-                num1, num2 = num2, num1
-            answer = num1 - num2
-            question = f"{num1} - {num2} = ?"
-        else:
-            answer = num1 * num2
-            question = f"{num1} × {num2} = ?"
-    
-    else:
-        # 3年级：加减乘除，数字范围1-1000
-        op = random.choice(['+', '-', '*', '/'])
-        if op in ['*', '/']:
-            num1 = random.randint(1, 20)
-            num2 = random.randint(1, 10)
-        else:
-            num1 = random.randint(1, 100)
-            num2 = random.randint(1, 100)
+    # 根据年龄调整难度和范围
+    if age <= 7:  # 6-7岁
+        max_num = 20 if age == 6 else 50
+        operations = ['+', '-']
+    elif age <= 9:  # 8-9岁
+        max_num = 100
+        operations = ['+', '-', '*']
+    elif age <= 10:  # 10岁
+        max_num = 1000
+        operations = ['+', '-', '*', '/']
+    else:  # 11-12岁
+        max_num = 10000
+        operations = ['+', '-', '*', '/', 'fraction', 'decimal']
+
+    # 生成题目逻辑
+    question = ""  # 初始化question变量
+    answer = 0     # 初始化answer变量
+    problem_type = "basic"  # 初始化problem_type变量
+
+    if age <= 9:
+        # 基础运算
+        num1 = random.randint(1, max_num)
+        num2 = random.randint(1, max_num)
+        op = random.choice(operations)
         
         if op == '+':
             answer = num1 + num2
@@ -285,19 +266,67 @@ def generate_fallback_problem(grade: int, problem_id: int) -> dict:
         elif op == '*':
             answer = num1 * num2
             question = f"{num1} × {num2} = ?"
-        else:
-            # 确保除法结果为整数
+        else:  # division
             answer = num1
             question = f"{num1 * num2} ÷ {num2} = ?"
-    
+        
+    elif age == 10:
+        # 添加分数和小数
+        problem_type = random.choice(['basic', 'fraction', 'decimal'])
+        if problem_type == 'fraction':
+            num1 = random.randint(1, 10)
+            den1 = random.randint(2, 10)
+            question = f"Hva er {num1}/{den1} som desimaltall?"
+            answer = num1 / den1
+        elif problem_type == 'decimal':
+            num1 = round(random.uniform(0.1, 10.0), 1)
+            num2 = round(random.uniform(0.1, 10.0), 1)
+            answer = round(num1 + num2, 2)
+            question = f"{num1} + {num2} = ?"
+        else:
+            num1 = random.randint(100, 1000)
+            num2 = random.randint(100, 1000)
+            answer = num1 + num2
+            question = f"{num1} + {num2} = ?"
+            
+    elif age == 11:
+        # 添加几何和更复杂的分数
+        problem_type = random.choice(['geometry', 'complex_fraction', 'percentage'])
+        if problem_type == 'geometry':
+            side = random.randint(1, 10)
+            question = f"Hva er omkretsen av et kvadrat med sider på {side} cm?"
+            answer = side * 4
+        else:
+            num1 = random.randint(1, 100)
+            answer = num1 / 2
+            question = f"Hva er halvparten av {num1}?"
+            
+    else:  # 12岁
+        # 添加代数和统计
+        problem_type = random.choice(['algebra', 'statistics', 'complex_calculation'])
+        numbers = [random.randint(1, 20) for _ in range(5)]
+        question = f"Hva er gjennomsnittet av tallene: {', '.join(map(str, numbers))}?"
+        answer = sum(numbers) / len(numbers)
+
     return {
         "id": problem_id,
         "question": question,
         "answer": float(answer),
-        "difficulty": "beginner" if grade <= 2 else "intermediate",
-        "grade": grade,
-        "type": "basic"
+        "difficulty": get_difficulty_by_age(age),
+        "age": age,
+        "type": problem_type
     }
+
+def get_difficulty_by_age(age: int) -> str:
+    """根据年龄返回难度级别"""
+    if age <= 7:
+        return "beginner"
+    elif age <= 9:
+        return "intermediate"
+    elif age <= 11:
+        return "advanced"
+    else:
+        return "expert"
 
 # 更新答案检查端点
 @router.post("/math/check")
@@ -337,3 +366,43 @@ async def check_math_answer(request: MathAnswerRequest):
 async def check_quiz_answer(question_id: int, answer: str):
     # TODO: 实现知识问答检查
     return {"correct": True, "feedback": "Riktig svar! Du er flink!"}  # 回答正确！你真棒！ 
+
+@router.post("/math/explain")
+async def get_math_explanation(
+    question: str,
+    answer: float,
+    problem_type: str,
+    age: int
+):
+    """获取数学题目的详细解释"""
+    try:
+        explanation = await grok_client.generate_explanation(
+            question, answer, problem_type, age
+        )
+        return {"explanation": explanation}
+    except Exception as e:
+        logger.error(f"Error generating explanation: {e}")
+        return {"explanation": "Beklager, kunne ikke generere forklaring."}
+
+@router.get("/math/similar")
+async def get_similar_problems(
+    age: int,
+    type: str,
+    count: int = 2
+):
+    """生成相似的题目"""
+    try:
+        problems = []
+        for i in range(count):
+            problem = await grok_client.generate_math_problem(age, type)
+            if problem:
+                problems.append({
+                    "id": f"similar_{i+1}",
+                    **problem,
+                    "age": age,
+                    "type": type
+                })
+        return problems
+    except Exception as e:
+        logger.error(f"Error generating similar problems: {e}")
+        return []
