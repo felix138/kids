@@ -1,0 +1,69 @@
+name: Auto Commit
+
+on:
+  schedule:
+    # 每天23:00 (UTC+8) 运行
+    - cron: '0 15 * * *'  # UTC时间15:00，对应北京时间23:00
+  
+  # 也可以手动触发
+  workflow_dispatch:
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 检出代码
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取完整的git历史
+
+    # 配置Git
+    - name: Setup Git
+      run: |
+        git config --global user.email "felix138@outlook.com"
+        git config --global user.name "felix138"
+
+    # 更新项目状态文件
+    - name: Update project status
+      run: |
+        # 创建或更新项目状态文件
+        echo "Last updated: $(date '+%Y-%m-%d %H:%M:%S')" > project_status.txt
+        echo "Commit count: $(git rev-list --count HEAD)" >> project_status.txt
+        echo "Latest commit: $(git log -1 --pretty=%B)" >> project_status.txt
+        
+        # 更新README中的项目状态
+        if grep -q "## Project Status" README.md; then
+          sed -i "/## Project Status/,/## /c\## Project Status\n\nLast updated: $(date '+%Y-%m-%d %H:%M:%S')\n\n## " README.md
+        else
+          echo -e "\n## Project Status\n\nLast updated: $(date '+%Y-%m-%d %H:%M:%S')" >> README.md
+        fi
+
+    # 检查是否有变更需要提交
+    - name: Check for changes
+      id: check_changes
+      run: |
+        git status
+        git diff --quiet || echo "has_changes=true" >> $GITHUB_OUTPUT
+
+    # 提交变更
+    - name: Commit changes
+      if: steps.check_changes.outputs.has_changes == 'true'
+      run: |
+        git add .
+        git commit -m "Auto update: $(date '+%Y-%m-%d %H:%M:%S')"
+
+    # 推送到GitHub
+    - name: Push changes
+      if: steps.check_changes.outputs.has_changes == 'true'
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
+
+    # 发送通知（可选）
+    - name: Send notification
+      if: steps.check_changes.outputs.has_changes == 'true'
+      run: |
+        echo "Changes have been committed and pushed successfully" 
