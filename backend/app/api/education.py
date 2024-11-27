@@ -25,8 +25,8 @@ class MathProblem(BaseModel):
     question: str
     answer: float
     difficulty: str
-    grade: int        # 年级
-    type: str        # 'basic', 'word_problem', 'geometry'
+    age: int        # 改为age而不是grade
+    type: str
 
 class KnowledgeQuiz(BaseModel):
     id: int
@@ -59,7 +59,71 @@ async def get_language_exercises(difficulty: Optional[str] = None):
     ]
     return exercises
 
-# 更新数学问题API端点
+# 修改问题缓存的实现
+_problem_cache = {}
+
+async def get_problem_from_db(problem_id: int) -> dict:
+    """从缓存或生成的问题中获取题目"""
+    logger.debug(f"Getting problem {problem_id} from cache: {_problem_cache}")
+    return _problem_cache.get(str(problem_id))
+
+# 更新生成数学题目的函数
+async def generate_math_problems(age: int, count: int = 10) -> List[dict]:
+    """生成数学题目并存入缓存"""
+    global _problem_cache
+    problems = []
+    
+    # 不清除缓存，而是保持现有的问题
+    existing_ids = set(_problem_cache.keys())
+    next_id = max([int(id) for id in existing_ids]) + 1 if existing_ids else 1
+    
+    for i in range(count):
+        try:
+            problem_type = random.choice(["basic", "word_problem", "geometry"])
+            grok_problem = await grok_client.generate_math_problem(age, problem_type)
+            
+            if grok_problem:
+                problem = {
+                    "id": next_id + i,
+                    "question": grok_problem["question"],
+                    "answer": grok_problem["answer"],
+                    "difficulty": get_difficulty_by_age(age),
+                    "age": age,
+                    "type": problem_type
+                }
+            else:
+                problem = generate_fallback_problem(age, next_id + i)
+            
+            # 使用字符串ID作为键存储到缓存
+            _problem_cache[str(problem["id"])] = problem
+            problems.append(problem)
+            
+            # 记录详细日志
+            logger.debug(f"Generated problem {problem['id']}:")
+            logger.debug(f"Question: {problem['question']}")
+            logger.debug(f"Answer: {problem['answer']}")
+            logger.debug(f"Cache state for problem {problem['id']}: {_problem_cache.get(str(problem['id']))}")
+            
+        except Exception as e:
+            logger.error(f"Error generating problem {next_id + i}: {e}")
+            problem = generate_fallback_problem(age, next_id + i)
+            _problem_cache[str(problem["id"])] = problem
+            problems.append(problem)
+    
+    # 验证缓存和返回的问题一致性
+    for p in problems:
+        cached = _problem_cache.get(str(p['id']))
+        if cached != p:
+            logger.error(f"Cache mismatch for problem {p['id']}:")
+            logger.error(f"Cache: {cached}")
+            logger.error(f"Return: {p}")
+    
+    logger.debug("Final problems to return:")
+    for p in problems:
+        logger.debug(f"ID: {p['id']}, Question: {p['question']}, Answer: {p['answer']}")
+    
+    return problems
+
 @router.get("/math/problems", response_model=List[MathProblem])
 async def get_math_problems(grade: int = 1, count: int = 10):
     """获取数学题目，可以指定年级和数量"""
@@ -67,15 +131,16 @@ async def get_math_problems(grade: int = 1, count: int = 10):
         raise HTTPException(status_code=400, detail="Maksimalt 100 oppgaver er tillatt")
     
     try:
-        # 调用异步函数并等待结果
         problems = await generate_math_problems(grade, count)
-        if not problems:
-            # 如果没有从Grok获取到题目，使用备用题目
-            problems = generate_fallback_problems(grade, count)
+        
+        # 验证返回的问题
+        logger.debug("Problems being returned to client:")
+        for p in problems:
+            logger.debug(f"ID: {p['id']}, Question: {p['question']}, Answer: {p['answer']}")
+            
         return problems
     except Exception as e:
-        print(f"Error generating problems: {e}")
-        # 返回备用题目
+        logger.error(f"Error in get_math_problems: {e}")
         return generate_fallback_problems(grade, count)
 
 def generate_fallback_problems(grade: int, count: int) -> List[dict]:
@@ -176,54 +241,6 @@ async def get_quiz_questions(category: Optional[str] = None):
 async def check_language_answer(exercise_id: int, answer: str):
     # TODO: 实现答案检查逻辑
     return {"correct": True, "feedback": "Riktig! Bra jobbet!"}  # 正确！做得好！
-
-# 修改问题缓存的实现
-_problem_cache = {}
-
-async def get_problem_from_db(problem_id: int) -> dict:
-    """从缓存或生成的问题中获取题目"""
-    logger.debug(f"Getting problem {problem_id} from cache: {_problem_cache}")
-    return _problem_cache.get(problem_id)
-
-# 更新生成数学题目的函数
-async def generate_math_problems(grade: int, count: int = 10) -> List[dict]:
-    """生成数学题目并存入缓存"""
-    global _problem_cache
-    _problem_cache.clear()  # 清除旧的缓存
-    problems = []
-    
-    for i in range(min(count, 100)):
-        try:
-            # 使用Grok生成题目
-            problem_type = random.choice(["basic", "word_problem", "geometry"])
-            grok_problem = await grok_client.generate_math_problem(grade, problem_type)
-            
-            if grok_problem:
-                problem = {
-                    "id": i + 1,
-                    "question": grok_problem["question"],
-                    "answer": grok_problem["answer"],
-                    "difficulty": "beginner" if grade <= 2 else "intermediate",
-                    "grade": grade,
-                    "type": problem_type
-                }
-            else:
-                # 如果Grok生成失败，使用备用的本地生成逻辑
-                problem = generate_fallback_problem(grade, i + 1)
-            
-            # 将题目添加到缓存和返回列表
-            _problem_cache[problem["id"]] = problem
-            problems.append(problem)
-            logger.debug(f"Generated problem {problem['id']}: {problem}")
-            
-        except Exception as e:
-            logger.error(f"Error generating problem: {e}")
-            problem = generate_fallback_problem(grade, i + 1)
-            _problem_cache[problem["id"]] = problem
-            problems.append(problem)
-    
-    logger.debug(f"Problem cache after generation: {_problem_cache}")
-    return problems
 
 def generate_fallback_problem(age: int, problem_id: int) -> dict:
     """根据年龄生成备用题目"""
@@ -328,31 +345,49 @@ def get_difficulty_by_age(age: int) -> str:
     else:
         return "expert"
 
-# 更新答案检查端点
+# 更新答案检端点
 @router.post("/math/check")
 async def check_math_answer(request: MathAnswerRequest):
     try:
-        # 从缓存中获取问题
+        # 从缓存中获取问题，使用字符串ID
         problem = await get_problem_from_db(request.problem_id)
         if not problem:
             logger.error(f"Problem {request.problem_id} not found in cache")
             raise HTTPException(status_code=404, detail="Oppgave ikke funnet")
         
         logger.debug(f"Checking answer for problem {request.problem_id}")
+        logger.debug(f"Problem from cache: {problem}")
         logger.debug(f"User answer: {request.answer}, Correct answer: {problem['answer']}")
         
-        # 使用本地检查逻辑
-        is_correct = abs(float(request.answer) - float(problem['answer'])) < 0.001
+        # 使用更精确的浮点数比较
+        user_answer = float(request.answer)
+        correct_answer = float(problem['answer'])
+        
+        # 根据题目类型调整误差范围
+        if problem['type'] in ['geometry', 'decimal', 'fraction']:
+            tolerance = 0.01  # 对于小数题目使用更大的误差范围
+        else:
+            tolerance = 0.001  # 对于整数题目使用更小的误差范围
+            
+        is_correct = abs(user_answer - correct_answer) <= tolerance
         
         # 根据答案生成反馈
         if is_correct:
             feedback = "Riktig! Bra jobbet! 🎉"
         else:
-            feedback = f"Ikke riktig. Det riktige svaret er {problem['answer']}. Prøv igjen! 💪"
+            # 格式化正确答案显示
+            if abs(correct_answer - round(correct_answer)) < 0.001:
+                # 如果是整数，不显示小数点
+                formatted_answer = str(int(correct_answer))
+            else:
+                # 如果是小数，保留两位小数
+                formatted_answer = f"{correct_answer:.2f}"
+            feedback = f"Ikke riktig. Det riktige svaret er {formatted_answer}. Prøv igjen! 💪"
         
         return {
             "correct": is_correct,
-            "feedback": feedback
+            "feedback": feedback,
+            "correct_answer": correct_answer  # 添加正确答案到响应中
         }
             
     except HTTPException:
@@ -367,17 +402,22 @@ async def check_quiz_answer(question_id: int, answer: str):
     # TODO: 实现知识问答检查
     return {"correct": True, "feedback": "Riktig svar! Du er flink!"}  # 回答正确！你真棒！ 
 
-@router.post("/math/explain")
-async def get_math_explanation(
-    question: str,
-    answer: float,
-    problem_type: str,
+# 添加请求模型
+class ExplanationRequest(BaseModel):
+    question: str
+    answer: float
+    type: str
     age: int
-):
+
+@router.post("/math/explain")
+async def get_math_explanation(request: ExplanationRequest):
     """获取数学题目的详细解释"""
     try:
         explanation = await grok_client.generate_explanation(
-            question, answer, problem_type, age
+            request.question,
+            request.answer,
+            request.type,
+            request.age
         )
         return {"explanation": explanation}
     except Exception as e:

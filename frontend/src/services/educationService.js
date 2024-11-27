@@ -77,10 +77,10 @@ export const educationService = {
     getMathExplanation: async (question, answer, type, age) => {
         try {
             const response = await axios.post(`${API_URL}/math/explain`, {
-                question,
-                answer,
-                type,
-                age
+                question: question,
+                answer: parseFloat(answer),
+                type: type,
+                age: parseInt(age)
             });
             return response.data.explanation;
         } catch (error) {

@@ -42,34 +42,96 @@ function MathGame() {
     const startListening = () => {
         if ('webkitSpeechRecognition' in window) {
             const recognition = new window.webkitSpeechRecognition();
-            recognition.lang = 'nb-NO';
+            recognition.lang = 'nb-NO';  // 挪威语
             recognition.continuous = false;
             recognition.interimResults = false;
 
-            recognition.onstart = () => setListening(true);
-            recognition.onend = () => setListening(false);
+            recognition.onstart = () => {
+                setListening(true);
+                setFeedback('Jeg lytter...');  // "我在听..."
+            };
+
+            recognition.onend = () => {
+                setListening(false);
+                setFeedback('');
+            };
+
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                // 支持口述分数
-                if (transcript.includes('delt på') || transcript.includes('over')) {
-                    const parts = transcript.split(/delt på|over/);
-                    if (parts.length === 2) {
-                        const num1 = parseFloat(parts[0].replace(/[^0-9]/g, ''));
-                        const num2 = parseFloat(parts[1].replace(/[^0-9]/g, ''));
-                        if (!isNaN(num1) && !isNaN(num2)) {
-                            setUserAnswer(`${num1}/${num2}`);
-                            return;
+                console.log('完整语音内容:', transcript);  // 记录完整内容
+                
+                // 先显示完整的语音内容
+                setUserAnswer(transcript);
+
+                // 然后尝试提取数字
+                const numberWords = {
+                    'en': '1', 'ett': '1', 'én': '1',
+                    'to': '2', 'tre': '3', 'fire': '4',
+                    'fem': '5', 'seks': '6', 'syv': '7',
+                    'åtte': '8', 'ni': '9', 'ti': '10',
+                    'elleve': '11', 'tolv': '12', 'tretten': '13',
+                    'fjorten': '14', 'femten': '15', 'seksten': '16',
+                    'sytten': '17', 'atten': '18', 'nitten': '19',
+                    'tjue': '20', 'tredve': '30', 'førti': '40',
+                    'femti': '50', 'seksti': '60', 'sytti': '70',
+                    'åtti': '80', 'nitti': '90', 'hundre': '100'
+                };
+
+                // 延迟处理数字，让用户先看到完整内容
+                setTimeout(() => {
+                    let processedText = transcript.toLowerCase();
+
+                    // 处理分数表达式
+                    if (processedText.includes('delt på') || processedText.includes('over')) {
+                        const parts = processedText.split(/delt på|over/);
+                        if (parts.length === 2) {
+                            let num1 = parts[0].trim();
+                            let num2 = parts[1].trim();
+
+                            // 转换数字单词
+                            Object.entries(numberWords).forEach(([word, num]) => {
+                                num1 = num1.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+                                num2 = num2.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+                            });
+
+                            // 提取数字
+                            num1 = num1.replace(/[^0-9]/g, '');
+                            num2 = num2.replace(/[^0-9]/g, '');
+
+                            if (num1 && num2) {
+                                setUserAnswer(`${num1}/${num2}`);
+                                setFeedback(`识别为分数: ${num1}/${num2}`);
+                                return;
+                            }
                         }
                     }
-                }
-                // 普通数字处理
-                const number = parseFloat(transcript.replace(/[^0-9.]/g, ''));
-                if (!isNaN(number)) {
-                    setUserAnswer(number.toString());
-                }
+
+                    // 处理普通数字
+                    Object.entries(numberWords).forEach(([word, num]) => {
+                        processedText = processedText.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+                    });
+
+                    // 提取数字（包括小数）
+                    const number = processedText.match(/\d+([,.]\d+)?/);
+                    if (number) {
+                        const answer = number[0].replace(',', '.');
+                        setUserAnswer(answer);
+                        setFeedback(`识别为数字: ${answer}`);
+                    } else {
+                        setFeedback('未能识别到数字，请重试');
+                    }
+                }, 1500); // 延迟1.5秒处理
+            };
+
+            recognition.onerror = (event) => {
+                console.error('语音识别错误:', event.error);
+                setListening(false);
+                setFeedback('发生错误，请重试');
             };
 
             recognition.start();
+        } else {
+            setFeedback('此浏览器不支持语音识别');
         }
     };
 
@@ -150,13 +212,18 @@ function MathGame() {
                 speak(feedback);
                 setCanMoveNext(false);
                 
-                const explanation = await educationService.getMathExplanation(
-                    currentProblem.question,
-                    correctAnswer,
-                    currentProblem.type,
-                    grade
-                );
-                setExplanation(explanation);
+                try {
+                    const explanation = await educationService.getMathExplanation(
+                        currentProblem.question,
+                        parseFloat(correctAnswer),
+                        currentProblem.type,
+                        currentProblem.age
+                    );
+                    setExplanation(explanation);
+                } catch (error) {
+                    console.error('Error getting explanation:', error);
+                    setExplanation('Kunne ikke hente forklaring.');
+                }
             }
 
             if (currentIndex >= problems.length - 1) {
@@ -366,11 +433,21 @@ function MathGame() {
                             disabled={listening}
                             className={`px-4 py-2 rounded ${
                                 listening 
-                                    ? 'bg-red-500'
-                                    : 'bg-green-500 hover:bg-green-600'
-                            } text-white disabled:opacity-50`}
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-green-500 hover:bg-green-600 text-white'
+                            } disabled:opacity-50 flex items-center space-x-2`}
                         >
-                            {listening ? 'Lytter...' : 'Snakk'}
+                            {listening ? (
+                                <>
+                                    <span className="animate-pulse">●</span>
+                                    <span>Lytter...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>🎤</span>
+                                    <span>Snakk</span>
+                                </>
+                            )}
                         </button>
                     </div>
                     <button

@@ -4,22 +4,20 @@ import aiohttp
 import json
 import logging
 
+# 加载环境变量
 load_dotenv()
 
 # 配置日志
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# 配置Grok API
-GROK_API_KEY = os.getenv("GROK_API_KEY", "xai-SIdr7qy50GxzLJHKdXrQ0NEQ8gD4zAacLA3ExH4Uc3mXfApAB2mPvndWSGz2FE8N50o1Q21mGT3jMBEN")
-GROK_API_BASE = "https://api.x.ai/v1/chat/completions"
-
 class GrokClient:
     def __init__(self):
+        # 从环境变量获取API密钥
         self.api_key = os.getenv("GROK_API_KEY")
         if not self.api_key:
             logger.error("No GROK_API_KEY found in environment variables")
-            self.api_key = "xai-SIdr7qy50GxzLJHKdXrQ0NEQ8gD4zAacLA3ExH4Uc3mXfApAB2mPvndWSGz2FE8N50o1Q21mGT3jMBEN"
+            raise ValueError("GROK_API_KEY environment variable is required")
         
         self.api_base = os.getenv("GROK_API_BASE", "https://api.x.ai/v1/chat/completions")
         self.headers = {
@@ -175,10 +173,17 @@ class GrokClient:
                 return None
                 
             question = question_answer[0].strip()
-            # 处理挪威语数字格式（将逗号替换为小数点）
-            answer_str = question_answer[1].strip().replace(',', '.')
+            answer_str = question_answer[1].strip()
+            
+            # 清理和标准化答案字符串
+            answer_str = ''.join(c for c in answer_str if c.isdigit() or c in '.-,')
+            answer_str = answer_str.replace(',', '.')
+            
             try:
                 answer = float(answer_str)
+                # 对于接近整数的答案，转换为整数
+                if abs(answer - round(answer)) < 0.001:
+                    answer = round(answer)
             except ValueError:
                 logger.error(f"Could not convert answer to float: {answer_str}")
                 return None
