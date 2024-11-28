@@ -40,98 +40,163 @@ function MathGame() {
 
     // 语音识别
     const startListening = () => {
-        if ('webkitSpeechRecognition' in window) {
+        if (!('webkitSpeechRecognition' in window)) {
+            setFeedback('Nettleseren din støtter ikke talegjenkjenning');  // 您的浏览器不支持语音识别
+            return;
+        }
+
+        try {
             const recognition = new window.webkitSpeechRecognition();
             recognition.lang = 'nb-NO';  // 挪威语
             recognition.continuous = false;
-            recognition.interimResults = false;
+            recognition.interimResults = true;  // 启用临时结果
+            recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
                 setListening(true);
-                setFeedback('Jeg lytter...');  // "我在听..."
+                setFeedback('Jeg lytter... Snakk nå');  // 我在听...现在说话
+                console.log('语音识别已启动');
             };
 
-            recognition.onend = () => {
-                setListening(false);
-                setFeedback('');
+            recognition.onaudiostart = () => {
+                console.log('开始接收音频');
+            };
+
+            recognition.onsoundstart = () => {
+                console.log('检测到声音');
+            };
+
+            recognition.onspeechstart = () => {
+                console.log('检测到语音');
+                setFeedback('Jeg hører deg...');  // 我听到你说话了...
             };
 
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                console.log('完整语音内容:', transcript);  // 记录完整内容
-                
-                // 先显示完整的语音内容
-                setUserAnswer(transcript);
+                console.log('收到识别结果:', event);
+                let interimTranscript = '';
+                let finalTranscript = '';
 
-                // 然后尝试提取数字
-                const numberWords = {
-                    'en': '1', 'ett': '1', 'én': '1',
-                    'to': '2', 'tre': '3', 'fire': '4',
-                    'fem': '5', 'seks': '6', 'syv': '7',
-                    'åtte': '8', 'ni': '9', 'ti': '10',
-                    'elleve': '11', 'tolv': '12', 'tretten': '13',
-                    'fjorten': '14', 'femten': '15', 'seksten': '16',
-                    'sytten': '17', 'atten': '18', 'nitten': '19',
-                    'tjue': '20', 'tredve': '30', 'førti': '40',
-                    'femti': '50', 'seksti': '60', 'sytti': '70',
-                    'åtti': '80', 'nitti': '90', 'hundre': '100'
-                };
-
-                // 延迟处理数字，让用户先看到完整内容
-                setTimeout(() => {
-                    let processedText = transcript.toLowerCase();
-
-                    // 处理分数表达式
-                    if (processedText.includes('delt på') || processedText.includes('over')) {
-                        const parts = processedText.split(/delt på|over/);
-                        if (parts.length === 2) {
-                            let num1 = parts[0].trim();
-                            let num2 = parts[1].trim();
-
-                            // 转换数字单词
-                            Object.entries(numberWords).forEach(([word, num]) => {
-                                num1 = num1.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
-                                num2 = num2.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
-                            });
-
-                            // 提取数字
-                            num1 = num1.replace(/[^0-9]/g, '');
-                            num2 = num2.replace(/[^0-9]/g, '');
-
-                            if (num1 && num2) {
-                                setUserAnswer(`${num1}/${num2}`);
-                                setFeedback(`识别为分数: ${num1}/${num2}`);
-                                return;
-                            }
-                        }
-                    }
-
-                    // 处理普通数字
-                    Object.entries(numberWords).forEach(([word, num]) => {
-                        processedText = processedText.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
-                    });
-
-                    // 提取数字（包括小数）
-                    const number = processedText.match(/\d+([,.]\d+)?/);
-                    if (number) {
-                        const answer = number[0].replace(',', '.');
-                        setUserAnswer(answer);
-                        setFeedback(`识别为数字: ${answer}`);
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                        console.log('最终识别结果:', finalTranscript);
                     } else {
-                        setFeedback('未能识别到数字，请重试');
+                        interimTranscript += transcript;
+                        console.log('临时识别结果:', interimTranscript);
                     }
-                }, 1500); // 延迟1.5秒处理
+                }
+
+                // 显示临时结果
+                if (interimTranscript) {
+                    setUserAnswer(interimTranscript);
+                    setFeedback('Behandler...');  // 处理中...
+                }
+
+                // 处理最终结果
+                if (finalTranscript) {
+                    console.log('处理最终识别结果:', finalTranscript);
+                    processRecognitionResult(finalTranscript);
+                }
+            };
+
+            recognition.onspeechend = () => {
+                console.log('语音结束');
+                setFeedback('Behandler svar...');  // 正在处理答案...
+            };
+
+            recognition.onend = () => {
+                console.log('识别结束');
+                setListening(false);
+                setFeedback('');
             };
 
             recognition.onerror = (event) => {
                 console.error('语音识别错误:', event.error);
                 setListening(false);
-                setFeedback('发生错误，请重试');
+                switch (event.error) {
+                    case 'no-speech':
+                        setFeedback('Ingen tale ble oppdaget. Prøv igjen.');  // 未检测到语音，请重试
+                        break;
+                    case 'audio-capture':
+                        setFeedback('Kunne ikke finne mikrofon. Sjekk innstillingene.');  // 找不到麦克风，请检查设置
+                        break;
+                    case 'not-allowed':
+                        setFeedback('Mikrofontilgang nektet. Gi tillatelse i nettleseren.');  // 麦克风访问被拒绝，请在浏览器中授权
+                        break;
+                    default:
+                        setFeedback('Det oppstod en feil. Prøv igjen.');  // 发生错误，请重试
+                }
             };
 
             recognition.start();
+        } catch (error) {
+            console.error('启动语音识别时出错:', error);
+            setFeedback('Kunne ikke starte talegjenkjenning. Prøv igjen.');  // 无法启动语音识别，请重试
+        }
+    };
+
+    // 添加处理识别结果的函数
+    const processRecognitionResult = (transcript) => {
+        console.log('开始处理识别结果:', transcript);
+        
+        // 先显示完整的语音内容
+        setUserAnswer(transcript);
+        
+        // 处理数字
+        const numberWords = {
+            'en': '1', 'ett': '1', 'én': '1',
+            'to': '2', 'tre': '3', 'fire': '4',
+            'fem': '5', 'seks': '6', 'syv': '7',
+            'åtte': '8', 'ni': '9', 'ti': '10',
+            'elleve': '11', 'tolv': '12', 'tretten': '13',
+            'fjorten': '14', 'femten': '15', 'seksten': '16',
+            'sytten': '17', 'atten': '18', 'nitten': '19',
+            'tjue': '20', 'tredve': '30', 'førti': '40',
+            'femti': '50', 'seksti': '60', 'sytti': '70',
+            'åtti': '80', 'nitti': '90', 'hundre': '100'
+        };
+
+        let processedText = transcript.toLowerCase();
+        
+        // 处理分数
+        if (processedText.includes('delt på') || processedText.includes('over')) {
+            const parts = processedText.split(/delt på|over/);
+            if (parts.length === 2) {
+                let num1 = parts[0].trim();
+                let num2 = parts[1].trim();
+
+                // 转换数字单词
+                Object.entries(numberWords).forEach(([word, num]) => {
+                    num1 = num1.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+                    num2 = num2.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+                });
+
+                // 提取数字
+                num1 = num1.replace(/[^0-9]/g, '');
+                num2 = num2.replace(/[^0-9]/g, '');
+
+                if (num1 && num2) {
+                    setUserAnswer(`${num1}/${num2}`);
+                    setFeedback(`Oppfattet brøk: ${num1}/${num2}`);  // 识别为分数
+                    return;
+                }
+            }
+        }
+
+        // 处理普通数字
+        Object.entries(numberWords).forEach(([word, num]) => {
+            processedText = processedText.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+        });
+
+        // 提取数字（包括小数）
+        const number = processedText.match(/\d+([,.]\d+)?/);
+        if (number) {
+            const answer = number[0].replace(',', '.');
+            setUserAnswer(answer);
+            setFeedback(`Oppfattet tall: ${answer}`);  // 识别为数字
         } else {
-            setFeedback('此浏览器不支持语音识别');
+            setFeedback('Kunne ikke oppfatte noe tall. Prøv igjen.');  // 未能识别到数字，请重试
         }
     };
 
