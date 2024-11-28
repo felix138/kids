@@ -1,3 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* 全局样式 */
+body {
+    font-family: 'Comic Neue', cursive;
+    background-color: #fef6ff;
+    color: #4a4a4a;
+}
+
+/* 标题样式 */
+h1, h2, h3 {
+    color: #ff6b9d;
+    font-weight: 700;
+}
+
+/* 按钮样式 */
+.btn-primary {
+    @apply bg-pink-400 hover:bg-pink-500 text-white font-bold py-2 px-4 rounded-full 
+    transform hover:scale-105 transition-all duration-200 shadow-md;
+}
+
+.btn-secondary {
+    @apply bg-purple-400 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-full
+    transform hover:scale-105 transition-all duration-200 shadow-md;
+}
+
+/* 卡片样式 */
+.card {
+    @apply bg-white rounded-2xl shadow-lg p-6 border-2 border-pink-200
+    hover:border-pink-300 transition-all duration-200;
+}
+
+/* 输入框样式 */
+.input-cute {
+    @apply border-2 border-pink-200 rounded-full px-4 py-2
+    focus:border-pink-400 focus:ring focus:ring-pink-200 focus:ring-opacity-50;
+}
+
+/* 反馈信息样式 */
+.feedback-correct {
+    @apply bg-green-100 text-green-600 p-4 rounded-2xl border-2 border-green-200;
+}
+
+.feedback-incorrect {
+    @apply bg-pink-100 text-pink-600 p-4 rounded-2xl border-2 border-pink-200;
+}
+
+/* 动画效果 */
+@keyframes bounce-light {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.animate-bounce-light {
+    animation: bounce-light 2s infinite;
+} 

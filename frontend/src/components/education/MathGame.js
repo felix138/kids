@@ -369,9 +369,11 @@ function MathGame() {
     // 游戏设置界面
     if (!gameStarted) {
         return (
-            <div className="p-4">
-                <h2 className="text-xl font-bold mb-4">Matematikkspill</h2>
-                <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="p-4 font-comic">
+                <h2 className="text-2xl font-bold mb-4 text-cute-pink animate-bounce-light">
+                    Matematikkspill
+                </h2>
+                <div className="card">
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -406,7 +408,7 @@ function MathGame() {
                         </div>
                         <button
                             onClick={handleStartGame}
-                            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
+                            className="btn-primary w-full"
                         >
                             Start spill
                         </button>
@@ -438,9 +440,11 @@ function MathGame() {
 
     // 游戏界面
     return (
-        <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Matematikkspill - {grade} år</h2>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
+        <div className="p-4 font-comic">
+            <h2 className="text-2xl font-bold mb-4 text-cute-pink">
+                Matematikkspill - {grade} år
+            </h2>
+            <div className="card">
                 {/* 添加加载进度显示 */}
                 {isGenerating && (
                     <div className="mb-4 text-sm text-gray-600">
@@ -489,18 +493,16 @@ function MathGame() {
                             type="text"
                             value={userAnswer}
                             onChange={(e) => setUserAnswer(e.target.value)}
-                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Skriv inn ditt svar (f.eks: 3/8 eller 0.375)..."
+                            className="input-cute w-full"
+                            placeholder="Skriv inn ditt svar..."
                         />
                         <button
                             type="button"
                             onClick={startListening}
                             disabled={listening}
-                            className={`px-4 py-2 rounded ${
-                                listening 
-                                    ? 'bg-red-500 text-white'
-                                    : 'bg-green-500 hover:bg-green-600 text-white'
-                            } disabled:opacity-50 flex items-center space-x-2`}
+                            className={`btn-secondary ${
+                                listening ? 'bg-red-400' : ''
+                            }`}
                         >
                             {listening ? (
                                 <>
@@ -517,17 +519,17 @@ function MathGame() {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
+                        className="btn-primary w-full"
                     >
                         Svar
                     </button>
                 </form>
 
                 {feedback && (
-                    <div className={`mt-4 p-3 rounded text-center ${
+                    <div className={`mt-4 ${
                         feedback.includes('Riktig') || feedback.includes('Gratulerer')
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
+                            ? 'feedback-correct'
+                            : 'feedback-incorrect'
                     }`}>
                         {feedback}
                     </div>
