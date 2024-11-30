@@ -25,7 +25,7 @@ function LanguageLearning() {
             setLoading(false);
         } catch (error) {
             console.error('加载练习时出错:', error);
-            setError('无法加载练习。请稍后重试。');
+            setError('无���加载练习。请稍后重试。');
             setLoading(false);
         }
     };

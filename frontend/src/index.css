@@ -50,9 +50,18 @@ h1, h2, h3 {
 }
 
 /* 动画效果 */
+@keyframes success-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.animate-success {
+    animation: success-bounce 0.5s ease-in-out;
+}
+
 @keyframes bounce-light {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+    50% { transform: translateY(-3px); }
 }
 
 .animate-bounce-light {

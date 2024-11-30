@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Logger from '../utils/logger';
 
 const API_URL = 'http://localhost:8000/api/education';
 
@@ -98,6 +99,85 @@ export const educationService = {
             return response.data;
         } catch (error) {
             console.error('Error getting similar problems:', error);
+            return [];
+        }
+    },
+
+    getProblems: async (age, count) => {
+        try {
+            Logger.debug('Requesting problems:', { age, count });
+            
+            const response = await axios.get(`${API_URL}/math/problems`, {
+                params: { age, count }
+            });
+            
+            Logger.trackProblem('API Response', {
+                rawResponse: response.data,
+                batchId: response.data?.batch_id
+            });
+            
+            if (!response.data || typeof response.data !== 'object') {
+                Logger.error('Invalid response format:', response.data);
+                return [];
+            }
+            
+            const batchId = response.data.batch_id;
+            if (batchId) {
+                localStorage.setItem('currentBatchId', batchId);
+                Logger.debug('Stored batch ID:', batchId);
+            }
+            
+            const problems = response.data.problems || [];
+            Logger.trackProblem('Processed Problems', { problems });
+            
+            return problems;
+        } catch (error) {
+            Logger.error('Error getting problems:', error);
+            return [];
+        }
+    },
+
+    checkAnswer: async (problemId, answer, batchId) => {
+        try {
+            Logger.debug('Checking answer:', {
+                problemId,
+                answer,
+                batchId
+            });
+            
+            const response = await axios.post(`${API_URL}/math/check`, {
+                problem_id: problemId,
+                answer: parseFloat(answer),
+                batch_id: batchId
+            });
+            
+            Logger.debug('Check answer response:', response.data);
+            
+            return {
+                correct: response.data.correct,
+                feedback: response.data.feedback,
+                correctAnswer: response.data.correct_answer
+            };
+        } catch (error) {
+            Logger.error('Error checking answer:', error);
+            throw new Error('Kunne ikke sjekke svaret. Prøv igjen senere.');
+        }
+    },
+
+    getRemainingProblems: async (batchId) => {
+        try {
+            Logger.debug('Requesting remaining problems for batch:', batchId);
+            
+            const response = await axios.get(`${API_URL}/math/problems/${batchId}/remaining`);
+            Logger.trackProblem('Received Remaining Problems', {
+                batchId,
+                problems: response.data
+            });
+            
+            return response.data;
+            
+        } catch (error) {
+            Logger.error('Error getting remaining problems:', error);
             return [];
         }
     }

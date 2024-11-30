@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { educationService } from '../../services/educationService';
 import { parseFraction, formatAnswer } from '../../utils/mathUtils';
+import Logger from '../../utils/logger';
 
 function MathGame() {
-    // 状态管理
+    // 添加回必要的状态
     const [grade, setGrade] = useState(6);
     const [problemCount, setProblemCount] = useState(10);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [loadedCount, setLoadedCount] = useState(0);
+    
+    // 移除未使用的状态
     const [gameStarted, setGameStarted] = useState(false);
     const [problems, setProblems] = useState([]);
     const [currentProblem, setCurrentProblem] = useState(null);
@@ -15,25 +20,40 @@ function MathGame() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [score, setScore] = useState(0);
-    const [speaking, setSpeaking] = useState(false);
     const [listening, setListening] = useState(false);
     const [showHint, setShowHint] = useState(false);
     const [hint, setHint] = useState('');
-    const [canMoveNext, setCanMoveNext] = useState(true);  // 是否可以进入下一题
-    const [explanation, setExplanation] = useState('');    // 问题解释
-    const [lastWrongType, setLastWrongType] = useState(null); // 上次错误的题目类型
-    const [isGenerating, setIsGenerating] = useState(false);  // 添加生成状态
-    const [loadedCount, setLoadedCount] = useState(0);        // 已加载题目数量
+    const [canMoveNext, setCanMoveNext] = useState(true);
+    const [explanation, setExplanation] = useState('');
+    const [lastWrongType, setLastWrongType] = useState(null);
+    const [isSpeaking, setIsSpeaking] = useState(false);
 
     // 语音合成
+    const stopSpeaking = () => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+        }
+    };
+
     const speak = (text) => {
         if ('speechSynthesis' in window) {
+            // 先停止当前朗读
+            stopSpeaking();
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'nb-NO';  // 挪威语
             utterance.rate = 0.9;      // 语速
             utterance.pitch = 1;       // 音高
-            setSpeaking(true);
-            utterance.onend = () => setSpeaking(false);
+            
+            // 设置状态和回调
+            setIsSpeaking(true);
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => {
+                setIsSpeaking(false);
+                console.error('Speech synthesis error');
+            };
+            
             window.speechSynthesis.speak(utterance);
         }
     };
@@ -93,7 +113,7 @@ function MathGame() {
                     setFeedback('Behandler...');  // 处理中...
                 }
 
-                // 处理最终结果
+                // 处理最结果
                 if (finalTranscript) {
                     console.log('处理最终识别结果:', finalTranscript);
                     processRecognitionResult(finalTranscript);
@@ -116,7 +136,7 @@ function MathGame() {
                 setListening(false);
                 switch (event.error) {
                     case 'no-speech':
-                        setFeedback('Ingen tale ble oppdaget. Prøv igjen.');  // 未检测到语音，请重试
+                        setFeedback('Ingen tale ble oppdaget. Prøv igjen.');  // 未检测到语音，请重
                         break;
                     case 'audio-capture':
                         setFeedback('Kunne ikke finne mikrofon. Sjekk innstillingene.');  // 找不到麦克风，请检查设置
@@ -201,49 +221,64 @@ function MathGame() {
     };
 
     // 加载数学题目
-    const loadProblems = async () => {
+    const fetchProblems = async () => {
         try {
             setLoading(true);
             setIsGenerating(true);
-            setGameStarted(true);  // 立即开始游戏
+            setLoadedCount(0);
             
-            // 先生成第一道题目
-            const firstProblem = await educationService.getMathProblems(grade, 1);
-            setProblems([firstProblem[0]]);
-            setCurrentProblem(firstProblem[0]);
-            setLoadedCount(1);
-            setLoading(false);
-
-            // 在后台继续生成其他题目
-            generateRemainingProblems();
-        } catch (error) {
-            console.error('Feil ved lasting av matematikkoppgaver:', error);
-            setError('Kunne ikke laste oppgaver. Prøv igjen senere.');
-            setLoading(false);
-            setIsGenerating(false);
-        }
-    };
-
-    // 添加后台生成题目的函数
-    const generateRemainingProblems = async () => {
-        try {
-            const batchSize = 2;  // 每次生成2道题
-            for (let i = 1; i < problemCount; i += batchSize) {
-                const count = Math.min(batchSize, problemCount - i);
-                const newProblems = await educationService.getMathProblems(grade, count);
-                setProblems(prev => [...prev, ...newProblems]);
-                setLoadedCount(prev => prev + count);
+            Logger.debug('Fetching problems:', { grade, count: problemCount });
+            
+            const newProblems = await educationService.getProblems(grade, problemCount);
+            Logger.trackProblem('Received Problems', { problems: newProblems });
+            
+            if (!Array.isArray(newProblems)) {
+                Logger.error('Invalid problems format:', newProblems);
+                setProblems([]);
+                setError('Kunne ikke laste oppgaver');
+                return;
+            }
+            
+            setProblems(newProblems);
+            setLoadedCount(newProblems.length);
+            
+            if (newProblems.length > 0) {
+                const firstProblem = newProblems[0];
+                Logger.trackProblem('Set Current Problem', { problem: firstProblem });
+                setCurrentProblem(firstProblem);
+                setGameStarted(true);
             }
         } catch (error) {
-            console.error('Error generating remaining problems:', error);
+            Logger.error('Error fetching problems:', error);
+            setError('Kunne ikke laste oppgaver');
         } finally {
+            setLoading(false);
             setIsGenerating(false);
         }
     };
 
-    // 处理开始游戏
+    // 添加重置函数
+    const resetGame = () => {
+        setProblems([]);
+        setCurrentProblem(null);
+        setCurrentIndex(0);
+        setUserAnswer('');
+        setFeedback('');
+        setScore(0);
+        setShowHint(false);
+        setHint('');
+        setCanMoveNext(false);
+        setExplanation('');
+        setLastWrongType(null);
+        setIsGenerating(false);
+        setLoadedCount(0);
+        localStorage.removeItem('currentBatchId');  // 清除当前批次ID
+    };
+
+    // 修改 handleStartGame 函数
     const handleStartGame = () => {
-        loadProblems();
+        resetGame();  // 先重置状态
+        fetchProblems();
     };
 
     // 处理答案提交
@@ -253,97 +288,158 @@ function MathGame() {
 
         try {
             const parsedAnswer = parseFraction(userAnswer);
-            if (isNaN(parsedAnswer)) {
-                setFeedback('Ugyldig svar. Prøv igjen!');
-                return;
-            }
+            Logger.debug('Submitting answer:', {
+                problemId: currentProblem.id,
+                batchId: localStorage.getItem('currentBatchId'),
+                userAnswer: parsedAnswer,
+                currentProblem
+            });
 
-            const result = await educationService.checkMathAnswer(
+            const result = await educationService.checkAnswer(
                 currentProblem.id,
-                parsedAnswer
+                parsedAnswer,
+                localStorage.getItem('currentBatchId')  // 确保传递 batchId
             );
 
             if (result.correct) {
                 setScore(score + 1);
+                // 显示正确答案的祝贺信息和动画
+                const successFeedback = 'Gratulerer, du har rett! 🎉';
+                setFeedback(successFeedback);
+                speak(successFeedback);
+                setCanMoveNext(true);  // 允许进入下一题
+                
+                // 添加动画效果
+                const answerInput = document.querySelector('.input-cute');
+                if (answerInput) {
+                    answerInput.classList.add('animate-success');
+                    setTimeout(() => {
+                        answerInput.classList.remove('animate-success');
+                    }, 1000);
+                }
+            } else {
                 setFeedback(result.feedback);
                 speak(result.feedback);
-                setCanMoveNext(false);
-                setLastWrongType(null);
-            } else {
-                setLastWrongType(currentProblem.type);
-                const correctAnswer = formatAnswer(currentProblem.answer);
-                const feedback = `Ikke riktig. Det riktige svaret er ${correctAnswer}.`;
-                setFeedback(feedback);
-                speak(feedback);
-                setCanMoveNext(false);
-                
-                try {
-                    const explanation = await educationService.getMathExplanation(
-                        currentProblem.question,
-                        parseFloat(correctAnswer),
-                        currentProblem.type,
-                        currentProblem.age
-                    );
-                    setExplanation(explanation);
-                } catch (error) {
-                    console.error('Error getting explanation:', error);
-                    setExplanation('Kunne ikke hente forklaring.');
-                }
-            }
-
-            if (currentIndex >= problems.length - 1) {
-                const finalScore = score + (result.correct ? 1 : 0);
-                const finalFeedback = `Gratulerer! Du har fullført alle oppgavene! Din poengsum: ${finalScore}/${problems.length}`;
-                setFeedback(finalFeedback);
-                speak(finalFeedback);
-                setGameStarted(false);
+                setCanMoveNext(false);  // 答错时不能进入下一题
             }
         } catch (error) {
-            console.error('Error submitting answer:', error);
-            setFeedback(error.message || 'Det oppstod en feil. Prøv igjen.');
+            Logger.error('Error submitting answer:', error);
+            setFeedback('Det oppstod en feil. Prøv igjen.');
         }
     };
 
-    // 添加下一题按钮处理函数
+    // 修改下一题按钮处理函数
     const handleNextProblem = async () => {
-        if (currentIndex < problems.length - 1) {
-            // 如果上一题答错了，生成两道相似题目
-            if (lastWrongType) {
-                try {
-                    const similarProblems = await educationService.getSimilarProblems(
-                        grade,
-                        lastWrongType,
-                        2
-                    );
-                    // 插入相似题目到当前位置后
-                    problems.splice(currentIndex + 1, 0, ...similarProblems);
-                } catch (error) {
-                    console.error('Error getting similar problems:', error);
-                }
+        try {
+            const batchId = localStorage.getItem('currentBatchId');
+            if (!batchId) {
+                Logger.error('No batch ID found');
+                return;
             }
+
+            // 获取最新的题目列表
+            const newProblems = await educationService.getRemainingProblems(batchId);
+            Logger.debug('Next problem check:', {
+                currentIndex,
+                problemsLength: problems.length,
+                newProblemsLength: newProblems.length,
+                currentProblem,
+                nextProblemIndex: currentIndex + 1
+            });
+
+            // 更新题目列表
+            if (newProblems.length > problems.length) {
+                setProblems(newProblems);
+            }
+
+            // 计算下一题的索引
+            const nextIndex = currentIndex + 1;
             
-            setCurrentIndex(currentIndex + 1);
-            setCurrentProblem(problems[currentIndex + 1]);
-            setUserAnswer('');
-            setFeedback('');
-            setExplanation('');
-            setCanMoveNext(true);
+            // 检查是否有下一题
+            if (nextIndex < newProblems.length) {
+                const nextProblem = newProblems[nextIndex];
+                Logger.debug('Moving to next problem:', {
+                    nextIndex,
+                    nextProblem
+                });
+                
+                // 更新状态
+                setCurrentIndex(nextIndex);
+                setCurrentProblem(nextProblem);
+                setUserAnswer('');
+                setFeedback('');
+                setExplanation('');
+                setCanMoveNext(false);
+                
+                // 如果上一题答错了，生成相似题目
+                if (lastWrongType) {
+                    try {
+                        const similarProblems = await educationService.getSimilarProblems(
+                            grade,
+                            lastWrongType,
+                            2
+                        );
+                        if (similarProblems.length > 0) {
+                            const updatedProblems = [...newProblems];
+                            updatedProblems.splice(nextIndex + 1, 0, ...similarProblems);
+                            setProblems(updatedProblems);
+                        }
+                    } catch (error) {
+                        Logger.error('Error getting similar problems:', error);
+                    }
+                }
+            } else if (newProblems.length === problemCount) {
+                // 已完成所有题目
+                handleGameEnd();
+            } else {
+                Logger.error('No more problems available', {
+                    nextIndex,
+                    problemCount,
+                    availableProblems: newProblems.length
+                });
+                setFeedback('Venter på flere oppgaver...');  // 等待更多题目...
+            }
+        } catch (error) {
+            Logger.error('Error in handleNextProblem:', error);
+            setFeedback('Det oppstod en feil. Prøv igjen.');
         }
     };
 
     // 朗读当前问题
     const readQuestion = () => {
         if (currentProblem?.question) {
-            speak(currentProblem.question);
+            if (isSpeaking) {
+                stopSpeaking();
+            } else {
+                speak(currentProblem.question);
+            }
         }
     };
 
-    // 在问题加载时自动朗读
+    // 在问题切换时停止朗读
     useEffect(() => {
-        if (currentProblem) {
-            readQuestion();
-        }
+        return () => {
+            stopSpeaking();
+        };
     }, [currentProblem]);
+
+    // 在组件卸载时停止朗读
+    useEffect(() => {
+        return () => {
+            stopSpeaking();
+        };
+    }, []);
+
+    // 修改朗读按钮
+    const renderSpeakButton = () => (
+        <button
+            onClick={readQuestion}
+            className={`p-2 rounded ${isSpeaking ? 'bg-red-500' : 'bg-blue-500'} text-white`}
+            title={isSpeaking ? 'Stop' : 'Read question'}
+        >
+            {isSpeaking ? 'Stop' : 'Read'} 🔊
+        </button>
+    );
 
     // 添加提示系统
     const generateHint = () => {
@@ -364,6 +460,61 @@ function MathGame() {
         }
         setHint(hintText);
         setShowHint(true);
+    };
+
+    // 使用 useCallback 包装 fetchRemainingProblems
+    const fetchRemainingProblems = useCallback(async () => {
+        try {
+            const batchId = localStorage.getItem('currentBatchId');
+            if (!batchId) return;
+            
+            const newProblems = await educationService.getRemainingProblems(batchId);
+            Logger.debug('Received remaining problems:', {
+                current: problems.length,
+                new: newProblems.length,
+                problems: newProblems
+            });
+            
+            if (newProblems.length > problems.length) {
+                setProblems(newProblems);
+                setLoadedCount(newProblems.length);
+            }
+        } catch (error) {
+            Logger.error('Error fetching remaining problems:', error);
+        }
+    }, [problems.length]);
+
+    // 修改轮询效果
+    useEffect(() => {
+        let interval;
+        if (gameStarted && problems.length > 0) {
+            interval = setInterval(fetchRemainingProblems, 2000);
+        }
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [gameStarted, problems.length, fetchRemainingProblems]);
+
+    // 使用 useEffect 监听题目变化
+    useEffect(() => {
+        if (currentProblem) {
+            Logger.debug('Current problem updated:', currentProblem);
+        }
+    }, [currentProblem]);
+
+    // 修改游戏结束处理
+    const handleGameEnd = () => {
+        const finalFeedback = `Gratulerer! Du har fullført alle oppgavene! Din poengsum: ${score}/${problemCount}`;
+        setFeedback(finalFeedback);
+        speak(finalFeedback);
+        
+        // 添加延迟，让用户看到最终分数
+        setTimeout(() => {
+            resetGame();
+            setGameStarted(false);
+        }, 3000);
     };
 
     // 游戏设置界面
@@ -431,7 +582,7 @@ function MathGame() {
             <p className="text-red-700">{error}</p>
             <button 
                 className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-                onClick={loadProblems}
+                onClick={fetchProblems}
             >
                 Prøv igjen
             </button>
@@ -466,25 +617,21 @@ function MathGame() {
                 <div className="mb-6">
                     <p className="text-lg font-medium">{currentProblem?.question}</p>
                     <div className="flex space-x-2 mt-2">
-                        <button
-                            onClick={readQuestion}
-                            disabled={speaking}
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                        >
-                            {speaking ? 'Leser...' : 'Les spørsmål'}
-                        </button>
-                        <button
-                            onClick={generateHint}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                        >
-                            Vis hint
-                        </button>
-                    </div>
-                    {showHint && hint && (
-                        <div className="mt-2 p-2 bg-yellow-100 text-yellow-800 rounded">
-                            💡 {hint}
+                        <div className="flex items-center gap-2 mb-4">
+                            {renderSpeakButton()}
+                            <button
+                                onClick={generateHint}
+                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                            >
+                                Vis hint
+                            </button>
                         </div>
-                    )}
+                        {showHint && hint && (
+                            <div className="mt-2 p-2 bg-yellow-100 text-yellow-800 rounded">
+                                💡 {hint}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -517,19 +664,43 @@ function MathGame() {
                             )}
                         </button>
                     </div>
-                    <button
-                        type="submit"
-                        className="btn-primary w-full"
-                    >
-                        Svar
-                    </button>
+                    
+                    <div className="flex justify-between items-center">
+                        <button
+                            type="submit"
+                            className="btn-primary"
+                            disabled={!userAnswer}
+                        >
+                            Svar
+                        </button>
+                        
+                        {canMoveNext && currentIndex < problemCount - 1 && (
+                            <button
+                                type="button"
+                                onClick={handleNextProblem}
+                                className="btn-secondary animate-bounce-light"
+                            >
+                                Neste spørsmål →
+                            </button>
+                        )}
+                        
+                        {currentIndex === problemCount - 1 && (
+                            <button
+                                type="button"
+                                onClick={handleGameEnd}
+                                className="btn-secondary"
+                            >
+                                Avslutt spill
+                            </button>
+                        )}
+                    </div>
                 </form>
 
                 {feedback && (
-                    <div className={`mt-4 ${
-                        feedback.includes('Riktig') || feedback.includes('Gratulerer')
-                            ? 'feedback-correct'
-                            : 'feedback-incorrect'
+                    <div className={`mt-4 p-3 rounded ${
+                        feedback.includes('Gratulerer') 
+                            ? 'bg-green-100 text-green-700 animate-success' 
+                            : 'bg-red-100 text-red-700'
                     }`}>
                         {feedback}
                     </div>
