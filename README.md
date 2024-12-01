@@ -478,4 +478,67 @@ npm install react-router-dom @types/react-router-do
 4. 实现学习进度保存
 5. 开发语言学习模块基础功能
 
+## 版本更新记录
+
+### v0.3.0 (2024-11-30)
+#### 新特性
+- 添加了完整的日志系统
+  - 支持日志文件轮转
+  - 可配置的日志级别
+  - 详细的调试信息记录
+- 改进了配置管理
+  - 统一使用 .env 配置
+  - 支持配置验证
+  - 移除硬编码配置
+
+#### 依赖更新
+- FastAPI 升级到 0.100.0+
+- Pydantic 升级到 2.0.0+
+- SQLAlchemy 升级到 1.4.41+
+- 添加 pydantic-settings 支持
+
+#### 技术栈
+- **后端**
+  - FastAPI 0.100.0+
+  - SQLAlchemy 1.4.41+
+  - Pydantic 2.0.0+
+  - Python 3.8+
+
+- **前端**
+  - React 17+
+  - TailwindCSS 2.2+
+  - TypeScript 4.4+
+
+#### 系统要求
+- Python 3.8 或更高版本
+- Node.js 14 或更高版本
+- PostgreSQL 12 或更高版本
+
+#### 配置说明
+必需的环境变量：
+```plaintext
+# API Configuration
+GROK_API_KEY=your_api_key
+GROK_API_BASE=https://api.x.ai/v1/chat/completions
+
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost/dbname
+
+# CORS Settings
+CORS_ORIGINS=http://localhost:3000
+
+# Logging Configuration
+LOG_LEVEL=DEBUG
+LOG_FILE=logs/app.log
+LOG_MAX_SIZE=10485760
+LOG_BACKUP_COUNT=5
+LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+```
+
+#### 已知问题修复
+- FastAPI 和 Pydantic 版本兼容性问题
+- 日志配置不灵活的问题
+- 配置管理混乱的问题
+- 依赖版本过时的问题
+
 

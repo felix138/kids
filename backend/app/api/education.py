@@ -3,16 +3,12 @@ from pydantic import BaseModel
 from typing import List, Optional
 import random
 from ..core.grok_client import grok_client
-import logging
+from ..core.logger import logger
 import json
 import time
 import asyncio
 
 router = APIRouter()
-
-# 配置日志
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # 定义请求模型
 class MathAnswerRequest(BaseModel):
@@ -77,7 +73,7 @@ _id_mapping = {}            # ID映射表
 _generation_status = {
     'in_progress': False,    # 生成状态
     'total_count': 0,       # 总题目数
-    'generated_count': 0,    # 已生成量
+    'generated_count': 0,    # 已生成
     'batch_id': None        # 批次ID
 }
 
@@ -424,7 +420,7 @@ def generate_word_problem_sync(age: int) -> dict:
     
     elif problem_type == 'sharing':
         item = random.choice(_word_problem_types['sharing']['items'])
-        if num2 == 0:  # 避免除以零
+        if num2 == 0:  # 避免除���零
             num2 = random.randint(1, 5)
         answer = num1 / num2
     
@@ -485,18 +481,130 @@ class ExplanationRequest(BaseModel):
 
 @router.post("/math/explain")
 async def get_math_explanation(request: ExplanationRequest):
-    """获数学题目的详细解释"""
+    """获取数学题目的详细解释"""
+    
+    logger.debug("=== Starting Math Explanation Generation ===")
+    logger.debug(f"Request: {request}")
+    
     try:
-        explanation = await grok_client.generate_explanation(
-            request.question,
-            request.answer,
-            request.type,
-            request.age
-        )
-        return {"explanation": explanation}
+        # 根据题目类型生成不同的解释
+        logger.debug(f"Problem type: {request.type}")
+        
+        if request.type == 'basic':
+            logger.debug("Generating basic problem explanation")
+            explanation = generate_basic_explanation(request)
+            logger.debug(f"Generated basic explanation: {explanation}")
+        else:
+            logger.debug("Generating word problem explanation")
+            explanation = await generate_word_problem_explanation(request)
+            logger.debug(f"Generated word problem explanation: {explanation}")
+            
+        logger.debug("=== Explanation Generation Completed ===")
+        return explanation
+        
     except Exception as e:
         logger.error(f"Error generating explanation: {e}")
-        return {"explanation": "Beklager, kunne ikke generere forklaring."}
+        error_response = {
+            'explanation': 'Beklager, kunne ikke generere forklaring.',
+            'tips': [
+                'Les oppgaven nøye',
+                'Finn viktige tall',
+                'Tenk på hva du skal finne ut'
+            ],
+            'example': None
+        }
+        logger.debug(f"Returning error response: {error_response}")
+        return error_response
+
+def generate_basic_explanation(request: ExplanationRequest) -> dict:
+    """生成基础运算题的解释"""
+    # 解析题目中的运算符和数字
+    numbers = [int(n) for n in request.question.split() if n.isdigit()]
+    operation = next((op for op in ['+', '-', '×', '÷'] if op in request.question), None)
+    
+    explanation = {
+        '+': f"Når vi legger sammen {numbers[0]} og {numbers[1]}, får vi {request.answer}",
+        '-': f"Når vi trekker {numbers[1]} fra {numbers[0]}, får vi {request.answer}",
+        '×': f"Når vi ganger {numbers[0]} med {numbers[1]}, får vi {request.answer}",
+        '÷': f"Når vi deler {numbers[0]} på {numbers[1]}, får vi {request.answer}"
+    }.get(operation, '')
+
+    tips = {
+        '+': [
+            "Tenk på å telle oppover",
+            "Du kan bruke fingre eller tegne streker",
+            "Start med det største tallet"
+        ],
+        '-': [
+            "Tenk på å telle nedover",
+            "Du kan bruke fingre eller tegne streker",
+            "Start med det største tallet"
+        ],
+        '×': [
+            "Tenk på gjentatt addisjon",
+            "Du kan bruke gangetabellen",
+            f"For eksempel: {numbers[0]} × {numbers[1]} = {numbers[0]} + {numbers[0]} ({numbers[1]} ganger)"
+        ],
+        '÷': [
+            "Tenk på deling i like store grupper",
+            "Du kan bruke gjentatt subtraksjon",
+            f"For eksempel: {numbers[0]} ÷ {numbers[1]} = hvor mange ganger kan vi trekke fra {numbers[1]}"
+        ]
+    }.get(operation, [])
+
+    example = {
+        '+': f"2 + 3 = 5 (telle oppover: 2, 3, 4, 5)",
+        '-': f"5 - 2 = 3 (telle nedover: 5, 4, 3)",
+        '×': f"3 × 4 = 12 (3 + 3 + 3 + 3 = 12)",
+        '÷': f"12 ÷ 3 = 4 (12 - 3 - 3 - 3 - 3 = 0, vi trakk fra 4 ganger)"
+    }.get(operation, None)
+
+    return {
+        'explanation': explanation,
+        'tips': tips,
+        'example': example
+    }
+
+async def generate_word_problem_explanation(request: ExplanationRequest) -> dict:
+    """生成应用题的解释"""
+    prompt = f"""
+    Forklar denne oppgaven for et barn ({request.age} år):
+    
+    Oppgave: {request.question}
+    Riktig svar: {request.answer}
+    
+    Gi:
+    1. En enkel forklaring
+    2. 3-4 nyttige tips
+    3. Et lignende eksempel
+    
+    Bruk enkelt språk og korte setninger.
+    """
+    
+    try:
+        explanation = await grok_client.generate_content(prompt)
+        explanation_data = json.loads(explanation)
+        
+        return {
+            'explanation': explanation_data.get('explanation', 'Vi prøver å løse dette steg for steg.'),
+            'tips': explanation_data.get('tips', [
+                'Les oppgaven nøye',
+                'Finn viktige tall',
+                'Tenk på hva du skal finne ut'
+            ]),
+            'example': explanation_data.get('example')
+        }
+    except Exception as e:
+        logger.error(f"Error generating word problem explanation: {e}")
+        return {
+            'explanation': 'Vi prøver å løse dette steg for steg.',
+            'tips': [
+                'Les oppgaven nøye',
+                'Finn viktige tall',
+                'Tenk på hva du skal finne ut'
+            ],
+            'example': None
+        }
 
 @router.get("/math/similar")
 async def get_similar_problems(
@@ -577,7 +685,7 @@ def create_word_problem_prompt(age: int) -> str:
             "Use real-life scenarios"
         ]
 
-    # 构建提示词
+    # 建提示词
     prompt = f"""Generate math word problems in Norwegian (Bokmål) for a {age}-year-old child.
 
     Age-specific requirements:
@@ -651,7 +759,7 @@ def validate_problem(problem: dict, age: int) -> bool:
         age (int): 学生年龄
         
     返回:
-        bool: ���目是否有效
+        bool: 题目是否有效
     """
     try:
         # 检查必需字段
