@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from ..config import settings
+from .config import settings
 
 def setup_logger(name: str = __name__) -> logging.Logger:
     """配置日志记录器"""

@@ -56,3 +56,114 @@
 2024-12-01 02:05:26,461 - app.core.logger - DEBUG - Available batches: dict_keys(['-6559107603236794903'])
 2024-12-01 02:05:26,462 - app.core.logger - DEBUG - Found 10 problems in batch
 2024-12-01 02:05:26,462 - app.core.logger - DEBUG - Returning problems: [{'id': 1, 'question': '19 - 10 = ?', 'answer': 9.0, 'difficulty': 'beginner', 'age': 6, 'type': 'basic', 'batch_id': '-6559107603236794903'}, {'id': 2, 'question': '15 + 10 = ?', 'answer': 25.0, 'difficulty': 'beginner', 'age': 6, 'type': 'basic', 'batch_id': '-6559107603236794903'}, {'id': 3, 'question': '15 - 12 = ?', 'answer': 3.0, 'difficulty': 'beginner', 'age': 6, 'type': 'basic', 'batch_id': '-6559107603236794903'}, {'question': 'Lars har 12 epler. Han gir 5 epler til sin venn. Hvor mange epler har Lars igjen?', 'answer': 7, 'type': 'word_problem', 'sub_type': 'sharing', 'difficulty': 'beginner', 'age': 6, 'id': 4, 'batch_id': '-6559107603236794903'}, {'question': 'Mamma kjøpte 8 bananer og 3 appelsiner. Hvor mange frukter har hun totalt?', 'answer': 11, 'type': 'word_problem', 'sub_type': 'shopping', 'difficulty': 'beginner', 'age': 6, 'id': 5, 'batch_id': '-6559107603236794903'}, {'question': 'Kari har 15 kr. Hun bruker 6 kr på en liten lekebil. Hvor mye penger har hun igjen?', 'answer': 9, 'type': 'word_problem', 'sub_type': 'shopping', 'difficulty': 'beginner', 'age': 6, 'id': 6, 'batch_id': '-6559107603236794903'}, {'question': 'Petter har 7 kjeks. Han deler 4 av dem med sin søster. Hvor mange kjeks har Petter igjen?', 'answer': 3, 'type': 'word_problem', 'sub_type': 'sharing', 'difficulty': 'beginner', 'age': 6, 'id': 7, 'batch_id': '-6559107603236794903'}, {'question': 'Pappa kjøpte 9 små sjokolader. Han spiste 2 av dem. Hvor mange sjokolader har han igjen?', 'answer': 7, 'type': 'word_problem', 'sub_type': 'shopping', 'difficulty': 'beginner', 'age': 6, 'id': 8, 'batch_id': '-6559107603236794903'}, {'question': 'Anna har 6 klinkekuler. Broren hennes gir henne 4 til. Hvor mange klinkekuler har Anna nå?', 'answer': 10, 'type': 'word_problem', 'sub_type': 'sharing', 'difficulty': 'beginner', 'age': 6, 'id': 9, 'batch_id': '-6559107603236794903'}, {'question': 'Mor kjøpte 10 karameller. Hun ga 3 til naboen. Hvor mange karameller har mor igjen?', 'answer': 7, 'type': 'word_problem', 'sub_type': 'sharing', 'difficulty': 'beginner', 'age': 6, 'id': 10, 'batch_id': '-6559107603236794903'}]
+2024-12-03 00:30:58,181 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 00:31:08,142 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 00:31:12,792 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 00:31:50,340 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 00:55:42,782 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 01:36:49,135 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 01:37:48,580 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 01:50:56,140 - app.core.logger - DEBUG - Database connection successful
+2024-12-03 01:51:07,004 - app.core.logger - DEBUG - Registration attempt for user: feya
+2024-12-03 01:51:07,014 - app.core.logger - ERROR - Registration error: (psycopg2.errors.UndefinedColumn) column users.hashed_password does not exist
+LINE 1: ...me AS users_username, users.email AS users_email, users.hash...
+                                                             ^
+
+[SQL: SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.hashed_password AS users_hashed_password, users.role AS users_role, users.age AS users_age, users.created_at AS users_created_at 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'username_1': 'feya', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-03 01:52:22,664 - app.core.logger - DEBUG - Database tables created successfully
+2024-12-03 01:52:24,770 - app.core.logger - DEBUG - Registration attempt for user: feya
+2024-12-03 01:52:24,774 - app.core.logger - ERROR - Registration error: (psycopg2.errors.UndefinedColumn) column users.hashed_password does not exist
+LINE 1: ...me AS users_username, users.email AS users_email, users.hash...
+                                                             ^
+
+[SQL: SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.hashed_password AS users_hashed_password, users.role AS users_role, users.age AS users_age, users.created_at AS users_created_at 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'username_1': 'feya', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-03 01:52:39,917 - app.core.logger - DEBUG - Registration attempt for user: feya
+2024-12-03 01:52:39,919 - app.core.logger - ERROR - Registration error: (psycopg2.errors.UndefinedColumn) column users.hashed_password does not exist
+LINE 1: ...me AS users_username, users.email AS users_email, users.hash...
+                                                             ^
+
+[SQL: SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.hashed_password AS users_hashed_password, users.role AS users_role, users.age AS users_age, users.created_at AS users_created_at 
+FROM users 
+WHERE users.username = %(username_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'username_1': 'feya', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2024-12-03 01:53:26,071 - app.core.logger - DEBUG - Database tables created successfully
+2024-12-03 01:53:27,649 - app.core.logger - DEBUG - Registration attempt for user: feya
+2024-12-03 01:53:27,842 - app.core.logger - DEBUG - Registration successful for user: feya
+2024-12-03 01:53:36,088 - app.core.logger - DEBUG - Login attempt for user: feya
+2024-12-03 01:53:36,253 - app.core.logger - DEBUG - Login successful for user: feya
+2024-12-03 14:54:15,836 - app.core.logger - ERROR - Error creating database tables: (psycopg2.OperationalError) connection to server at "192.168.1.40", port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2024-12-03 15:07:14,379 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10
+2024-12-03 15:07:14,380 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8932788615180249143
+2024-12-03 15:09:03,342 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:03,342 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:05,349 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:05,349 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:07,348 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:07,348 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:21,850 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:21,851 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:22,353 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:22,354 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:24,353 - app.core.logger - ERROR - Batch 8932788615180249143 not found
+2024-12-03 15:09:24,353 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:09:28,979 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10
+2024-12-03 15:09:28,979 - app.core.logger - INFO - Returning initial 3 problems with batch_id 4061329339631793842
+2024-12-03 15:12:14,138 - app.core.logger - ERROR - Batch 4061329339631793842 not found
+2024-12-03 15:12:14,139 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:12:14,345 - app.core.logger - ERROR - Batch 4061329339631793842 not found
+2024-12-03 15:12:14,345 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-03 15:12:19,878 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10
+2024-12-03 15:12:19,878 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2229985849692080634
+2024-12-03 15:20:12,346 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-03 15:20:12,346 - app.core.logger - INFO - Returning initial 3 problems with batch_id -8813298559492276386
+2024-12-03 15:20:26,207 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'Et tog forlater Oslo klokken 08:30 og tar 3 timer og 45 minutter til Bergen. Hva er ankomsttiden i Bergen?', 'answer': '12:15', 'type': 'word_problem', 'sub_type': 'time'}
+2024-12-03 15:25:39,812 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10
+2024-12-03 15:25:39,812 - app.core.logger - INFO - Returning initial 3 problems with batch_id -4167796620564888446
+2024-12-03 15:27:25,985 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:29,623 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:30,785 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:31,423 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:31,953 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:32,433 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:32,920 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:33,165 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:33,362 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:27:33,546 - app.core.logger - ERROR - User not found: Liya
+2024-12-03 15:28:01,337 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-03 15:28:01,337 - app.core.logger - INFO - Returning initial 3 problems with batch_id 5376163966791689115
+2024-12-03 15:37:13,596 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:15,926 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:17,061 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:17,462 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:17,799 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:31,066 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:33,782 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:34,315 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:36,769 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:37:37,926 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:40,482 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:41,028 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:41,284 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:41,525 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:41,765 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:42,024 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:38:42,503 - app.core.logger - ERROR - Error in check_math_answer: float division by zero
+2024-12-03 15:48:20,041 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10
+2024-12-03 15:48:20,041 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8043754202299296504
+2024-12-03 15:48:58,281 - app.core.logger - INFO - Starting get_math_problems with age=11, count=10
+2024-12-03 15:48:58,281 - app.core.logger - INFO - Returning initial 3 problems with batch_id -1315037200565271476

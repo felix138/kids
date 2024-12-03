@@ -1,23 +1,47 @@
 import axios from 'axios';
 import Logger from '../utils/logger';
 
-const API_URL = 'http://localhost:8000/api/education';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+const getAuthHeader = () => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
 
 export const educationService = {
     // 语言学习
     getLanguageExercises: async (difficulty) => {
-        const response = await axios.get(`${API_URL}/language/exercises`, {
-            params: { difficulty }
-        });
-        return response.data;
+        try {
+            const response = await axios.get(`${API_URL}/education/language/exercises`, {
+                params: { difficulty },
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error getting language exercises:', error);
+            throw new Error('Kunne ikke laste øvelser');
+        }
     },
 
     checkLanguageAnswer: async (exerciseId, answer) => {
-        const response = await axios.post(`${API_URL}/language/check`, {
-            exercise_id: exerciseId,
-            answer
-        });
-        return response.data;
+        try {
+            const response = await axios.post(`${API_URL}/education/language/check`, {
+                exercise_id: exerciseId,
+                answer
+            }, {
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error checking language answer:', error);
+            throw new Error('Kunne ikke sjekke svaret');
+        }
     },
 
     // 数学游戏
@@ -107,8 +131,14 @@ export const educationService = {
         try {
             Logger.debug('Requesting problems:', { age, count });
             
-            const response = await axios.get(`${API_URL}/math/problems`, {
-                params: { age, count }
+            const response = await axios.get(`${API_URL}/education/math/problems`, {
+                params: { age, count },
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                withCredentials: true
             });
             
             Logger.trackProblem('API Response', {
@@ -145,10 +175,15 @@ export const educationService = {
                 batchId
             });
             
-            const response = await axios.post(`${API_URL}/math/check`, {
+            const response = await axios.post(`${API_URL}/education/math/check`, {
                 problem_id: problemId,
                 answer: parseFloat(answer),
                 batch_id: batchId
+            }, {
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
             });
             
             Logger.debug('Check answer response:', response.data);
@@ -168,7 +203,12 @@ export const educationService = {
         try {
             Logger.debug('Requesting remaining problems for batch:', batchId);
             
-            const response = await axios.get(`${API_URL}/math/problems/${batchId}/remaining`);
+            const response = await axios.get(`${API_URL}/education/math/problems/${batchId}/remaining`, {
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
+            });
             Logger.trackProblem('Received Remaining Problems', {
                 batchId,
                 problems: response.data

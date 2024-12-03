@@ -276,9 +276,28 @@ function MathGame() {
     };
 
     // 修改 handleStartGame 函数
-    const handleStartGame = () => {
-        resetGame();  // 先重置状态
-        fetchProblems();
+    const handleStartGame = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            console.log('Starting game with:', { age: grade, count: problemCount });
+            
+            const problems = await educationService.getProblems(grade, problemCount);
+            console.log('Received problems:', problems);
+            
+            if (!problems || problems.length === 0) {
+                throw new Error('Ingen oppgaver mottatt');
+            }
+            
+            setProblems(problems);
+            setCurrentProblem(problems[0]);
+            setGameStarted(true);
+        } catch (error) {
+            console.error('Error starting game:', error);
+            setError('Kunne ikke starte spillet. Prøv igjen senere.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // 处理答案提交

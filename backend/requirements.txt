@@ -8,3 +8,5 @@ pydantic-settings>=2.0.0
 celery>=5.3.1
 aiohttp>=3.8.5
 python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4

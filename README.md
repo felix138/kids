@@ -540,5 +540,5 @@ LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
 - 日志配置不灵活的问题
 - 配置管理混乱的问题
 - 依赖版本过时的问题
-
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 

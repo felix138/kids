@@ -1,12 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 import random
 from ..core.grok_client import grok_client
 from ..core.logger import logger
+from ..core.config import settings
 import json
 import time
 import asyncio
+from ..api.auth import get_current_user
+from ..models.user import User
 
 router = APIRouter()
 
@@ -49,16 +52,19 @@ class ExplanationRequest(BaseModel):
 
 # 语言练习API端点
 @router.get("/language/exercises", response_model=List[LanguageExercise])
-async def get_language_exercises(difficulty: Optional[str] = None):
+async def get_language_exercises(
+    difficulty: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
     # 示例数据
     exercises = [
         {
             "id": 1,
-            "question": "Hvilken setning er grammatisk korrekt?",  # 哪个句子语法正确？
+            "question": "Hvilken setning er grammatisk korrekt?",
             "options": [
-                "Jeg liker å lese bøker",     # 我喜欢读书
-                "Jeg liker lese bøker",       # 错误语法
-                "Jeg like å lese bøker"       # 错误语法
+                "Jeg liker å lese bøker",
+                "Jeg liker lese bøker",
+                "Jeg like å lese bøker"
             ],
             "correct_answer": "Jeg liker å lese bøker",
             "difficulty": "beginner",
@@ -87,31 +93,42 @@ class MathProblemsResponse(BaseModel):
     problems: List[MathProblem]
 
 @router.get("/math/problems", response_model=MathProblemsResponse)
-async def get_math_problems(age: int = 6, count: int = 10):
+async def get_math_problems(
+    age: int = 6, 
+    count: int = 10,
+    current_user: User = Depends(get_current_user)
+):
     """获取数学题目"""
     try:
+        logger.info(f"Starting get_math_problems with age={age}, count={count}")
+        
         # 生成新的批次ID
         batch_id = str(hash(f"{age}_{count}_{time.time()}"))
+        logger.debug(f"Generated batch_id: {batch_id}")
         
         # 创建新的批次存储
         _batch_problems[batch_id] = {}
         
         # 生成初始题目（30%）
         initial_count = max(1, int(count * 0.3))
+        logger.debug(f"Will generate {initial_count} initial problems and {count - initial_count} remaining problems")
+        
         initial_problems = []
         
         # 生成初始题目
         for i in range(initial_count):
-            problem_id = i + 1
-            problem = generate_basic_problem(age, problem_id)
-            problem['batch_id'] = batch_id
-            problem['id'] = problem_id
-            
-            # 保存到批次存储
-            _batch_problems[batch_id][str(problem_id)] = problem.copy()
-            initial_problems.append(problem)
-            
-        logger.debug(f"Generated problems: {initial_problems}")  # 添加日志
+            try:
+                problem_id = i + 1
+                problem = generate_basic_problem(age, problem_id)
+                problem['batch_id'] = batch_id
+                problem['id'] = problem_id
+                
+                # 保存到批次存储
+                _batch_problems[batch_id][str(problem_id)] = problem.copy()
+                initial_problems.append(problem)
+                logger.debug(f"Generated problem {problem_id}: {problem}")
+            except Exception as e:
+                logger.error(f"Error generating problem {i+1}: {e}")
         
         # 启动异步生成剩余题目
         asyncio.create_task(
@@ -121,18 +138,17 @@ async def get_math_problems(age: int = 6, count: int = 10):
         # 确保返回的是有效的响应格式
         response = MathProblemsResponse(
             batch_id=batch_id,
-            problems=initial_problems or []  # 确保总是返回列表
+            problems=initial_problems or []
         )
         
-        logger.debug(f"Returning response: {response}")  # 添加日志
+        logger.info(f"Returning initial {len(initial_problems)} problems with batch_id {batch_id}")
         return response
         
     except Exception as e:
         logger.error(f"Error in get_math_problems: {e}")
-        # 返回空列表而不是错误
-        return MathProblemsResponse(
-            batch_id=str(time.time()),
-            problems=[]
+        raise HTTPException(
+            status_code=500,
+            detail="Kunne ikke generere oppgaver"
         )
 
 async def generate_remaining_problems(age: int, remaining_count: int, start_id: int, batch_id: str):
@@ -206,7 +222,10 @@ async def generate_remaining_problems(age: int, remaining_count: int, start_id: 
         logger.debug(f"Current batch status: {_batch_problems.get(batch_id, {})}")
 
 @router.post("/math/check")
-async def check_math_answer(request: MathAnswerRequest):
+async def check_math_answer(
+    request: MathAnswerRequest,
+    current_user: User = Depends(get_current_user)
+):
     """检查数学答案"""
     try:
         # 添加详细日志
@@ -289,9 +308,13 @@ async def get_quiz_questions(category: Optional[str] = None):
 
 # 检查语言答案
 @router.post("/language/check")
-async def check_language_answer(exercise_id: int, answer: str):
+async def check_language_answer(
+    exercise_id: int, 
+    answer: str,
+    current_user: User = Depends(get_current_user)
+):
     # TODO: 实现答案检查逻辑
-    return {"correct": True, "feedback": "Riktig! Bra jobbet!"}  # 正确！做得好！
+    return {"correct": True, "feedback": "Riktig! Bra jobbet!"}
 
 def generate_basic_problem(age: int, problem_id: int) -> dict:
     """
@@ -307,7 +330,7 @@ def generate_basic_problem(age: int, problem_id: int) -> dict:
     logger.debug(f"Generating basic problem for age {age}, problem_id {problem_id}")
     
     try:
-        # 根据年龄设置数字范围和运算类型
+        # 根据年龄设置数字围和运算类型
         if age <= 7:  # 6-7岁
             max_num = 20 if age == 6 else 50
             operations = ['+', '-']  # 仅加减法
@@ -420,7 +443,7 @@ def generate_word_problem_sync(age: int) -> dict:
     
     elif problem_type == 'sharing':
         item = random.choice(_word_problem_types['sharing']['items'])
-        if num2 == 0:  # 避免除���零
+        if num2 == 0:  # 避免除零
             num2 = random.randint(1, 5)
         answer = num1 / num2
     
@@ -803,7 +826,10 @@ def validate_problem(problem: dict, age: int) -> bool:
         return False
 
 @router.get("/math/problems/{batch_id}/remaining", response_model=List[MathProblem])
-async def get_remaining_problems(batch_id: str):
+async def get_remaining_problems(
+    batch_id: str,
+    current_user: User = Depends(get_current_user)
+):
     """获取批次中的剩余题目"""
     try:
         logger.debug(f"Getting remaining problems for batch {batch_id}")
