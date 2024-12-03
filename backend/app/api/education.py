@@ -306,7 +306,7 @@ async def get_quiz_questions(category: Optional[str] = None):
     ]
     return questions
 
-# 检查语言答案
+# 检查言答案
 @router.post("/language/check")
 async def check_language_answer(
     exercise_id: int, 
@@ -503,22 +503,20 @@ class ExplanationRequest(BaseModel):
     age: int
 
 @router.post("/math/explain")
-async def get_math_explanation(request: ExplanationRequest):
+async def get_math_explanation(
+    request: ExplanationRequest,
+    current_user: User = Depends(get_current_user)
+):
     """获取数学题目的详细解释"""
-    
-    logger.debug("=== Starting Math Explanation Generation ===")
-    logger.debug(f"Request: {request}")
-    
     try:
-        # 根据题目类型生成不同的解释
-        logger.debug(f"Problem type: {request.type}")
+        logger.debug("=== Starting Math Explanation Generation ===")
+        logger.debug(f"Request: {request}")
         
         if request.type == 'basic':
-            logger.debug("Generating basic problem explanation")
             explanation = generate_basic_explanation(request)
             logger.debug(f"Generated basic explanation: {explanation}")
         else:
-            logger.debug("Generating word problem explanation")
+            # 确保调用应用题解释生成
             explanation = await generate_word_problem_explanation(request)
             logger.debug(f"Generated word problem explanation: {explanation}")
             
@@ -527,7 +525,7 @@ async def get_math_explanation(request: ExplanationRequest):
         
     except Exception as e:
         logger.error(f"Error generating explanation: {e}")
-        error_response = {
+        return {
             'explanation': 'Beklager, kunne ikke generere forklaring.',
             'tips': [
                 'Les oppgaven nøye',
@@ -536,8 +534,6 @@ async def get_math_explanation(request: ExplanationRequest):
             ],
             'example': None
         }
-        logger.debug(f"Returning error response: {error_response}")
-        return error_response
 
 def generate_basic_explanation(request: ExplanationRequest) -> dict:
     """生成基础运算题的解释"""
@@ -590,43 +586,100 @@ def generate_basic_explanation(request: ExplanationRequest) -> dict:
 
 async def generate_word_problem_explanation(request: ExplanationRequest) -> dict:
     """生成应用题的解释"""
-    prompt = f"""
-    Forklar denne oppgaven for et barn ({request.age} år):
-    
-    Oppgave: {request.question}
-    Riktig svar: {request.answer}
-    
-    Gi:
-    1. En enkel forklaring
-    2. 3-4 nyttige tips
-    3. Et lignende eksempel
-    
-    Bruk enkelt språk og korte setninger.
-    """
-    
     try:
-        explanation = await grok_client.generate_content(prompt)
-        explanation_data = json.loads(explanation)
+        logger.debug(f"Generating word problem explanation for: {request}")
         
-        return {
-            'explanation': explanation_data.get('explanation', 'Vi prøver å løse dette steg for steg.'),
-            'tips': explanation_data.get('tips', [
-                'Les oppgaven nøye',
-                'Finn viktige tall',
-                'Tenk på hva du skal finne ut'
-            ]),
-            'example': explanation_data.get('example')
-        }
+        # 构建提示词，更注重知识点和解题思路
+        prompt = f"""
+        Forklar denne oppgaven for et barn ({request.age} år):
+        
+        Oppgave: {request.question}
+        Riktig svar: {request.answer}
+        
+        Gi følgende i JSON-format:
+        {{
+            "knowledge_point": "Forklar det viktigste matematiske konseptet i oppgaven",
+            "explanation": "Detaljert forklaring av løsningsmetoden, steg for steg",
+            "tips": [
+                "3-4 konkrete tips for å løse slike oppgaver",
+                "Fokuser på problemløsningsstrategier"
+            ],
+            "solution_steps": [
+                "Liste over spesifikke trinn for å løse denne oppgaven",
+                "Start med hva vi vet",
+                "Hvordan vi bruker informasjonen",
+                "Hvordan vi kommer fram til svaret"
+            ],
+            "similar_problem": {{
+                "question": "Et lignende eksempel",
+                "solution": "Løsning på eksempelet"
+            }}
+        }}
+        
+        Bruk enkelt språk og fokuser på å forklare tankegangen.
+        """
+        
+        logger.debug(f"Sending prompt to Grok: {prompt}")
+        
+        try:
+            response = await grok_client.generate_content(prompt)
+            logger.debug(f"Received response from Grok: {response}")
+            
+            try:
+                explanation_data = json.loads(response)
+                logger.debug(f"Parsed explanation data: {explanation_data}")
+                
+                return {
+                    'knowledge_point': explanation_data.get('knowledge_point', 
+                        'La oss forstå det grunnleggende konseptet først.'),
+                    'explanation': explanation_data.get('explanation', 
+                        'La oss løse dette steg for steg.'),
+                    'tips': explanation_data.get('tips', [
+                        'Les oppgaven nøye',
+                        'Identifiser viktig informasjon',
+                        'Lag en plan for løsningen',
+                        'Sjekk svaret ditt'
+                    ]),
+                    'solution_steps': explanation_data.get('solution_steps', [
+                        'Forstå hva oppgaven spør om',
+                        'Finn relevant informasjon',
+                        'Velg riktig metode',
+                        'Regn ut svaret'
+                    ]),
+                    'similar_problem': explanation_data.get('similar_problem', {
+                        'question': 'Her er et lignende eksempel...',
+                        'solution': 'Slik løser vi det...'
+                    })
+                }
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse Grok response: {e}")
+                raise
+                
+        except Exception as e:
+            logger.error(f"Error calling Grok API: {e}")
+            raise
+            
     except Exception as e:
-        logger.error(f"Error generating word problem explanation: {e}")
+        logger.error(f"Error in generate_word_problem_explanation: {e}")
         return {
-            'explanation': 'Vi prøver å løse dette steg for steg.',
+            'knowledge_point': 'La oss forstå det grunnleggende konseptet først.',
+            'explanation': 'La oss løse dette steg for steg.',
             'tips': [
                 'Les oppgaven nøye',
-                'Finn viktige tall',
-                'Tenk på hva du skal finne ut'
+                'Identifiser viktig informasjon',
+                'Lag en plan for løsningen',
+                'Sjekk svaret ditt'
             ],
-            'example': None
+            'solution_steps': [
+                'Forstå hva oppgaven spør om',
+                'Finn relevant informasjon',
+                'Velg riktig metode',
+                'Regn ut svaret'
+            ],
+            'similar_problem': {
+                'question': 'Her er et lignende eksempel...',
+                'solution': 'Slik løser vi det...'
+            }
         }
 
 @router.get("/math/similar")
@@ -700,12 +753,13 @@ def create_word_problem_prompt(age: int) -> str:
             "sum_max": 1000
         }
         operations = "all basic operations"
-        allowed_types = ["shopping", "sharing", "time", "measurement"]
+        allowed_types = ["shopping", "sharing", "time", "measurement","Distance and Speed","Arrangements and Combinations"]
         rules = [
             "Can use all basic operations",
             "Can include simple decimals",
             f"Numbers must be between {number_range['min']} and {number_range['max']}",
-            "Use real-life scenarios"
+            "Use real-life scenarios",
+            "Add and subtract fractions"
         ]
 
     # 建提示词

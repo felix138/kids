@@ -341,6 +341,31 @@ function MathGame() {
                 speak(result.feedback);
                 setCanMoveNext(false);  // 答错时不能进入下一题
             }
+
+            // 在答案验证后添加解释获取
+            if (!result.correct) {
+                try {
+                    const explanation = await educationService.getMathExplanation(
+                        currentProblem.question,
+                        currentProblem.answer,
+                        currentProblem.type,
+                        grade
+                    );
+                    // 确保所有字段都是字符串或数组
+                    setExplanation({
+                        knowledge_point: String(explanation.knowledge_point || ''),
+                        explanation: String(explanation.explanation || ''),
+                        tips: Array.isArray(explanation.tips) ? explanation.tips : [],
+                        solution_steps: Array.isArray(explanation.solution_steps) ? explanation.solution_steps : [],
+                        similar_problem: {
+                            question: String(explanation.similar_problem?.question || ''),
+                            solution: String(explanation.similar_problem?.solution || '')
+                        }
+                    });
+                } catch (error) {
+                    Logger.error('Error getting explanation:', error);
+                }
+            }
         } catch (error) {
             Logger.error('Error submitting answer:', error);
             setFeedback('Det oppstod en feil. Prøv igjen.');
@@ -529,7 +554,7 @@ function MathGame() {
         setFeedback(finalFeedback);
         speak(finalFeedback);
         
-        // 添加延迟，让用户看到最终分数
+        // 添���延迟，让用户看到最终分数
         setTimeout(() => {
             resetGame();
             setGameStarted(false);
@@ -728,8 +753,58 @@ function MathGame() {
                 {/* 添加解释部分 */}
                 {explanation && (
                     <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <h3 className="font-bold mb-2">Forklaring:</h3>
-                        <p className="text-gray-700">{explanation}</p>
+                        {/* 知识点 */}
+                        {explanation.knowledge_point && (
+                            <div className="mb-4">
+                                <h3 className="font-bold text-lg text-blue-700 mb-2">Viktig konsept:</h3>
+                                <p className="text-gray-700">{explanation.knowledge_point}</p>
+                            </div>
+                        )}
+
+                        {/* 详细解释 */}
+                        {explanation.explanation && (
+                            <div className="mb-4">
+                                <h3 className="font-bold text-lg text-blue-700 mb-2">Forklaring:</h3>
+                                <p className="text-gray-700">{explanation.explanation}</p>
+                            </div>
+                        )}
+
+                        {/* 解题步骤 */}
+                        {explanation.solution_steps && explanation.solution_steps.length > 0 && (
+                            <div className="mb-4">
+                                <h3 className="font-bold text-lg text-blue-700 mb-2">Løsningstrinn:</h3>
+                                <ol className="list-decimal list-inside space-y-1">
+                                    {explanation.solution_steps.map((step, index) => (
+                                        <li key={index} className="text-gray-700">{String(step)}</li>
+                                    ))}
+                                </ol>
+                            </div>
+                        )}
+
+                        {/* 解题技巧 */}
+                        {explanation.tips && explanation.tips.length > 0 && (
+                            <div className="mb-4">
+                                <h3 className="font-bold text-lg text-blue-700 mb-2">Tips:</h3>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {explanation.tips.map((tip, index) => (
+                                        <li key={index} className="text-gray-700">{String(tip)}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* 类似例题 */}
+                        {explanation.similar_problem && explanation.similar_problem.question && (
+                            <div className="mt-4 p-4 bg-white rounded-lg shadow-inner">
+                                <h3 className="font-bold text-lg text-blue-700 mb-2">Lignende eksempel:</h3>
+                                <p className="text-gray-700 mb-2">{explanation.similar_problem.question}</p>
+                                {explanation.similar_problem.solution && (
+                                    <p className="text-gray-600 italic">
+                                        Løsning: {explanation.similar_problem.solution}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 

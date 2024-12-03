@@ -101,15 +101,24 @@ export const educationService = {
     // 添加获取数学解释的方法
     getMathExplanation: async (question, answer, type, age) => {
         try {
-            const response = await axios.post(`${API_URL}/math/explain`, {
+            Logger.debug('Requesting explanation:', { question, answer, type, age });
+            
+            const response = await axios.post(`${API_URL}/education/math/explain`, {
                 question: question,
                 answer: parseFloat(answer),
                 type: type,
                 age: parseInt(age)
+            }, {
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
             });
-            return response.data.explanation;
+            
+            Logger.debug('Explanation response:', response.data);
+            return response.data;
         } catch (error) {
-            console.error('Error getting math explanation:', error);
+            Logger.error('Error getting math explanation:', error);
             return 'Kunne ikke hente forklaring.';
         }
     },
