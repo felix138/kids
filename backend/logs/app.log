@@ -244,3 +244,131 @@ WHERE users.username = %(username_1)s
 2024-12-03 20:32:55,986 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
 2024-12-03 20:32:55,986 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'En eske inneholder 12 røde og 8 blå klinkekuler. Hvis du tar ut 4 kuler uten å se, hva er sannsynligheten for at alle 4 kuler er røde?', 'answer': '1/95', 'type': 'word_problem', 'sub_type': 'Arrangements and Combinations'}
 2024-12-03 20:32:55,986 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'Line har 5/8 av en sjokoladeplate, og hennes venn har 3/8. Hvis de deler likt på det de har igjen, hvor stor del av sjokoladeplaten får hver av dem?', 'answer': '1/2', 'type': 'word_problem', 'sub_type': 'sharing'}
+2024-12-07 23:41:46,996 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-07 23:41:46,996 - app.core.logger - INFO - Returning initial 3 problems with batch_id -8351125081111014718
+2024-12-07 23:41:56,837 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-07 23:41:56,837 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-07 23:59:30,568 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-07 23:59:30,568 - app.core.logger - INFO - Returning initial 3 problems with batch_id -3522322213479912155
+2024-12-07 23:59:40,617 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'En film varer i 2 timer og 45 minutter. Hvis filmen starter klokken 18:30, når slutter den?', 'answer': '21:15', 'type': 'word_problem', 'sub_type': 'time'}
+2024-12-07 23:59:40,618 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-07 23:59:40,618 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'På en skole skal elevene deles inn i grupper på 6. Hvis det er 98 elever, hvor mange grupper blir det, og hvor mange elever blir igjen uten gruppe?', 'answer': '16 grupper og 2 elever', 'type': 'word_problem', 'sub_type': 'Arrangements and Combinations'}
+2024-12-08 00:05:56,202 - app.core.logger - ERROR - Batch -3522322213479912155 not found
+2024-12-08 00:05:56,202 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:05:56,706 - app.core.logger - ERROR - Batch -3522322213479912155 not found
+2024-12-08 00:05:56,706 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:06:02,303 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:06:02,303 - app.core.logger - INFO - Returning initial 3 problems with batch_id -6648476657015086437
+2024-12-08 00:06:11,843 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:06:11,843 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:06:11,843 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:07:14,440 - app.core.logger - ERROR - Batch -6648476657015086437 not found
+2024-12-08 00:07:14,440 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:07:16,433 - app.core.logger - ERROR - Batch -6648476657015086437 not found
+2024-12-08 00:07:16,433 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:07:18,431 - app.core.logger - ERROR - Batch -6648476657015086437 not found
+2024-12-08 00:07:18,432 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:07:20,432 - app.core.logger - ERROR - Batch -6648476657015086437 not found
+2024-12-08 00:07:20,432 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:07:22,432 - app.core.logger - ERROR - Batch -6648476657015086437 not found
+2024-12-08 00:07:22,432 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:07:43,677 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:07:43,677 - app.core.logger - INFO - Returning initial 3 problems with batch_id -6397438450575690315
+2024-12-08 00:07:53,379 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:07:53,380 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:09:59,365 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:09:59,366 - app.core.logger - INFO - Returning initial 3 problems with batch_id 5545768188364910605
+2024-12-08 00:10:08,775 - app.core.logger - ERROR - Invalid answer type in problem: {'question': 'En kake er delt i 8 like store biter. Hvis man spiser 3 biter, hvor stor del av kaken er igjen?', 'answer': '5/8', 'type': 'word_problem', 'sub_type': 'sharing'}
+2024-12-08 00:10:08,776 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:10:08,777 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:12:02,333 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:12:02,334 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2359077429483909869
+2024-12-08 00:12:11,531 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:12:11,531 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:35:56,352 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:35:56,352 - app.core.logger - INFO - Returning initial 3 problems with batch_id 7579773735107543627
+2024-12-08 00:36:06,565 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:36:06,565 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:36:51,170 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10
+2024-12-08 00:36:51,170 - app.core.logger - INFO - Returning initial 3 problems with batch_id -5674000531935901858
+2024-12-08 00:37:00,466 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:37:00,466 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:37:41,930 - app.core.logger - ERROR - Batch 2359077429483909869 not found
+2024-12-08 00:37:41,930 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:37:42,990 - app.core.logger - ERROR - Batch 2359077429483909869 not found
+2024-12-08 00:37:42,991 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 00:39:06,632 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8288595067734173138
+2024-12-08 00:39:17,770 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:39:17,771 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:39:17,772 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:40:01,498 - app.core.logger - INFO - Returning initial 3 problems with batch_id -6010249180814249408
+2024-12-08 00:46:43,410 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Decimal']
+2024-12-08 00:46:43,410 - app.core.logger - INFO - Returning initial 3 problems with batch_id -2638812076014502855
+2024-12-08 00:46:43,411 - app.core.logger - ERROR - Error in generate_remaining_problems: the JSON object must be str, bytes or bytearray, not list
+2024-12-08 00:48:32,897 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Decimal']
+2024-12-08 00:48:32,898 - app.core.logger - INFO - Returning initial 3 problems with batch_id -7536322502909285290
+2024-12-08 00:48:42,648 - app.core.logger - ERROR - Invalid problem sub_type: Distance and Speed
+2024-12-08 00:48:42,648 - app.core.logger - ERROR - Invalid problem sub_type: Arrangements and Combinations
+2024-12-08 00:56:15,262 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Decimal']
+2024-12-08 00:56:15,262 - app.core.logger - INFO - Returning initial 3 problems with batch_id 4400267955223197119
+2024-12-08 00:56:25,141 - app.core.logger - ERROR - Invalid problem sub_type for age 10: Distance and Speed
+2024-12-08 00:56:25,141 - app.core.logger - ERROR - Invalid problem sub_type for age 10: Arrangements and Combinations
+2024-12-08 00:56:25,141 - app.core.logger - ERROR - Invalid problem sub_type for age 10: Arrangements and Combinations
+2024-12-08 00:59:20,084 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Decimal']
+2024-12-08 00:59:20,084 - app.core.logger - INFO - Returning initial 3 problems with batch_id -4882349491257619554
+2024-12-08 00:59:48,418 - app.core.logger - ERROR - Batch 2359077429483909869 not found
+2024-12-08 00:59:48,418 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:00:15,928 - app.core.logger - INFO - Starting get_math_problems with age=9, count=10, rules=None
+2024-12-08 01:00:15,929 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8493983040653341329
+2024-12-08 01:00:24,659 - app.core.logger - ERROR - Answer out of range for age 9: 1700
+2024-12-08 01:00:24,659 - app.core.logger - ERROR - Answer out of range for age 9: 1930
+2024-12-08 01:02:17,709 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['decimal']
+2024-12-08 01:02:17,709 - app.core.logger - INFO - Returning initial 3 problems with batch_id 5041210242563837154
+2024-12-08 01:05:02,365 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only decimal']
+2024-12-08 01:05:02,366 - app.core.logger - INFO - Returning initial 3 problems with batch_id 3349573228283373847
+2024-12-08 01:09:09,607 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:09:09,607 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:09:19,972 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Only Decimal']
+2024-12-08 01:09:19,972 - app.core.logger - INFO - Returning initial 3 problems with batch_id 35895802771768161
+2024-12-08 01:10:09,609 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:10:09,609 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:11:09,297 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:11:09,297 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:11:41,598 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:11:41,599 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:11:43,296 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:11:43,296 - app.core.logger - ERROR - Error getting remaining problems: 404: Invalid batch
+2024-12-08 01:12:02,017 - app.core.logger - ERROR - Batch 3349573228283373847 not found
+2024-12-08 01:12:02,026 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 01:12:02,026 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2023811294648916968
+2024-12-08 01:12:09,787 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=['only decimal']
+2024-12-08 01:12:09,788 - app.core.logger - INFO - Returning initial 3 problems with batch_id 3107538777764879173
+2024-12-08 01:12:45,877 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only decimal']
+2024-12-08 01:12:45,878 - app.core.logger - INFO - Returning initial 3 problems with batch_id 3047658284360043081
+2024-12-08 01:19:01,221 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only decimal']
+2024-12-08 01:19:01,221 - app.core.logger - INFO - Returning initial 3 problems with batch_id -4821678684406418611
+2024-12-08 01:20:32,099 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only Fraction']
+2024-12-08 01:20:32,099 - app.core.logger - INFO - Returning initial 3 problems with batch_id -790199804798544264
+2024-12-08 01:24:28,805 - app.core.logger - ERROR - Batch -790199804798544264 not found
+2024-12-08 01:24:28,814 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 01:24:28,814 - app.core.logger - INFO - Returning initial 3 problems with batch_id 5857459869481272203
+2024-12-08 01:24:45,422 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Fraction']
+2024-12-08 01:24:45,423 - app.core.logger - INFO - Returning initial 3 problems with batch_id -1398680411272389480
+2024-12-08 01:24:55,672 - app.core.logger - ERROR - Too many decimal places in answer: 0.1875
+2024-12-08 01:30:59,437 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only fraction']
+2024-12-08 01:30:59,437 - app.core.logger - INFO - Returning initial 3 problems with batch_id 7790688117374489841
+2024-12-08 01:31:08,671 - app.core.logger - ERROR - Too many decimal places in answer: 3.585
+2024-12-08 01:34:12,426 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only fraction']
+2024-12-08 01:34:12,426 - app.core.logger - INFO - Returning initial 3 problems with batch_id -2365842204708430334
+2024-12-08 01:36:08,367 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['decimal']
+2024-12-08 01:36:08,367 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2159314498765749052
+2024-12-08 01:38:28,149 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only decimal']
+2024-12-08 01:38:28,150 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2809642789202507123
+2024-12-08 01:47:30,611 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 01:47:30,611 - app.core.logger - INFO - Returning initial 3 problems with batch_id -2998332466175739093
+2024-12-08 01:50:31,989 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 01:50:31,990 - app.core.logger - INFO - Returning initial 3 problems with batch_id -2669762442434014229
+2024-12-08 02:20:45,386 - app.core.logger - ERROR - Login error: name 'db' is not defined
+2024-12-08 02:23:20,300 - app.core.logger - ERROR - Login error: name 'db' is not defined
+2024-12-08 02:25:59,079 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=None
+2024-12-08 02:25:59,080 - app.core.logger - INFO - Returning initial 3 problems with batch_id 7290355471445663888

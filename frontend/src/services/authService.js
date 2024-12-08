@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.1.40:8000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+console.log('API_URL:', API_URL);
 
 export const authService = {
     login: async (credentials) => {
@@ -13,8 +14,10 @@ export const authService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
                 },
                 body: formData,
+                mode: 'cors',
                 credentials: 'include'
             });
 

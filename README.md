@@ -107,7 +107,7 @@ barn-ai-assistant/
 │ ├── public/
 │ │ └── index.html
 │ ├── src/
-│ │ ├── components/
+│ │ ���─ components/
 │ │ │ └── Navbar.js
 │ │ ├── pages/
 │ │ │ ├── Home.js
@@ -144,7 +144,7 @@ Du må også opprette environment.yml-filen i prosjektets rotkatalog, med innhol
 4. Push til gren (`git push origin feature/AmazingFeature`)
 5. Opprett en Pull Request
 
-## 文件结构说明
+## 件���构说明
 
 ### 前端文件 (Frontend)
 
@@ -196,7 +196,7 @@ Du må også opprette environment.yml-filen i prosjektets rotkatalog, med innhol
   - 包含两个主要功能区：
     - 互动故事 (Interaktive Historier)
     - 智力游戏 (Hjernetrim)
-  - 提供详细的功能描述和交互按钮
+  - 提供详细的功描述���交互按钮
 
 #### 配置文件
 - `frontend/package.json`
@@ -257,7 +257,7 @@ Du må også opprette environment.yml-filen i prosjektets rotkatalog, med innhol
 1. 激活Conda环境：`conda activate barn-ai`
 2. 安装依赖：`pip install -r requirements.txt`
 npm install react-router-dom @types/react-router-do
-3. 启动FastAPI服务器：`uvicorn main:app --reload`
+3. 启动FastAPI��务器：`uvicorn main:app --reload`
 4. 访问 `http://localhost:8000/docs` 查看API文档
 
 ## 环境安装指南
@@ -369,7 +369,7 @@ npm install react-router-dom @types/react-router-do
 - [x] Grok API集成
 - [x] 答案验证系统
 - [x] 语音朗读功能
-- [x] 语音输入功能
+- [x] 语音输���功能
 - [x] 实时评分系统
 - [x] 挪威语界面
 
@@ -428,7 +428,7 @@ npm install react-router-dom @types/react-router-do
 
 2. 开发语言学习基础功能
    - 实现基础词汇练习
-   - 添加简单句型训练
+   - 添加简单句训练
    - 集成发音评估
    - 建立学习进度跟踪
 
@@ -491,7 +491,7 @@ npm install react-router-dom @types/react-router-do
   - 支持配置验证
   - 移除硬编码配置
 
-#### 依赖更新
+#### 依��更新
 - FastAPI 升级到 0.100.0+
 - Pydantic 升级到 2.0.0+
 - SQLAlchemy 升级到 1.4.41+
@@ -553,7 +553,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 - **知识点展示优化**
   - 结构化的解释内容
-  - 清晰的视觉层次
+  - 清晰的视层次
   - 交互式内容展示
   - 条件渲染逻辑
 
@@ -562,4 +562,73 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 - 优化了条件渲染逻辑
 - 添加了错误处理机制
 - 改进了用户界面交互
+
+## 版本更新
+
+### 2024-12-08 版本
+- **认证系统完善**
+  - 完整的用户登录功能
+  - 安全的令牌管理
+  - 统一的错误处理
+
+- **配置系统优化**
+  - 环境变量配置
+  - CORS 安全配置
+  - 开发环境示例
+
+- **技术栈更新**
+  - FastAPI 0.100.0+
+  - React 18.2.0+
+  - SQLAlchemy 1.4.41+
+  - JWT 认证
+
+- **部署说明**
+  ```bash
+  # 后端启动
+  uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # 前端启动
+  npm start
+  ```
+
+- **环境要求**
+  - Python 3.8+
+  - Node.js 14+
+  - PostgreSQL 12+
+  - 环境变量配置
+
+- **数学应用题生成优化**
+  - 支持多种数字类型（整数、小数、分数）
+  - 年龄分级的题目生成系统
+  - 完善的验证规则机制
+  - 优化的提示词系统
+
+- **题目生成规则**
+  ```python
+  # 规则示例
+  number_rules = [
+      "Numbers can be:",
+      "- Whole numbers between 0 and 1000",
+      "- Decimals between 0.00 and 1000.00 (up to 2 decimal places)",
+      "- Simple fractions (like 1/2, 1/3, 1/4, 2/3, 3/4)"
+  ]
+  ```
+
+- **规则系统优化**
+  - 支持自定义规则输入
+  - 灵活的规则组合机制
+  - 实时规则验证
+  - 示例：
+    ```javascript
+    // 规则处理示例
+    const rulesArray = customRules
+        ? customRules.split('\n').filter(rule => rule.trim())
+        : null;
+    ```
+
+- **用户界面改进**
+  - 添加规则输入界面
+  - 优化规则显示格式
+  - 提供规则输入指导
+  - 支持规则实时预览
 

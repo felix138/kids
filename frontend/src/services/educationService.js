@@ -136,43 +136,39 @@ export const educationService = {
         }
     },
 
-    getProblems: async (age, count) => {
+    getProblems: async (age, count, rules = null) => {
         try {
-            Logger.debug('Requesting problems:', { age, count });
+            const params = {
+                age,
+                count
+            };
             
+            if (rules && rules.length > 0) {
+                params.rules = JSON.stringify(rules);
+            }
+
             const response = await axios.get(`${API_URL}/education/math/problems`, {
-                params: { age, count },
+                params,
                 headers: {
                     ...getAuthHeader(),
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                withCredentials: true
+                    'Content-Type': 'application/json'
+                }
             });
-            
-            Logger.trackProblem('API Response', {
-                rawResponse: response.data,
-                batchId: response.data?.batch_id
-            });
-            
-            if (!response.data || typeof response.data !== 'object') {
-                Logger.error('Invalid response format:', response.data);
+
+            // 确保返回正确的数据结构
+            if (response.data && response.data.problems) {
+                // 保存批次ID
+                if (response.data.batch_id) {
+                    localStorage.setItem('currentBatchId', response.data.batch_id);
+                }
+                return response.data.problems;  // 返回题目数组
+            } else {
+                console.error('Invalid response format:', response.data);
                 return [];
             }
-            
-            const batchId = response.data.batch_id;
-            if (batchId) {
-                localStorage.setItem('currentBatchId', batchId);
-                Logger.debug('Stored batch ID:', batchId);
-            }
-            
-            const problems = response.data.problems || [];
-            Logger.trackProblem('Processed Problems', { problems });
-            
-            return problems;
         } catch (error) {
-            Logger.error('Error getting problems:', error);
-            return [];
+            console.error('Error getting problems:', error);
+            throw error;
         }
     },
 
@@ -218,13 +214,18 @@ export const educationService = {
                     'Content-Type': 'application/json'
                 }
             });
-            Logger.trackProblem('Received Remaining Problems', {
-                batchId,
-                problems: response.data
-            });
+            
+            // 如果没有找到批次，重新获取题目
+            if (!response.data || response.data.length === 0) {
+                Logger.debug('No remaining problems found, fetching new problems');
+                const newProblems = await educationService.getProblems(
+                    localStorage.getItem('currentAge'),
+                    localStorage.getItem('currentCount')
+                );
+                return newProblems;
+            }
             
             return response.data;
-            
         } catch (error) {
             Logger.error('Error getting remaining problems:', error);
             return [];

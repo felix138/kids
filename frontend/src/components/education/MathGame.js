@@ -27,6 +27,7 @@ function MathGame() {
     const [explanation, setExplanation] = useState('');
     const [lastWrongType, setLastWrongType] = useState(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [customRules, setCustomRules] = useState('');  // 添加新状态
 
     // 语音合成
     const stopSpeaking = () => {
@@ -258,31 +259,42 @@ function MathGame() {
     };
 
     // 添加重置函数
-    const resetGame = () => {
-        setProblems([]);
-        setCurrentProblem(null);
-        setCurrentIndex(0);
-        setUserAnswer('');
-        setFeedback('');
-        setScore(0);
-        setShowHint(false);
-        setHint('');
-        setCanMoveNext(false);
-        setExplanation('');
-        setLastWrongType(null);
-        setIsGenerating(false);
-        setLoadedCount(0);
-        localStorage.removeItem('currentBatchId');  // 清除当前批次ID
-    };
+    const resetGame = useCallback(() => {
+        try {
+            setGameStarted(false);
+            setProblems([]);
+            setCurrentProblem(null);
+            setCurrentIndex(0);
+            setUserAnswer('');
+            setFeedback('');
+            setScore(0);
+            setCanMoveNext(false);
+            setExplanation('');
+            setShowHint(false);
+            setHint('');
+            localStorage.removeItem('currentBatchId');
+        } catch (error) {
+            console.error('Error in resetGame:', error);
+        }
+    }, []);
 
     // 修改 handleStartGame 函数
     const handleStartGame = async () => {
         try {
             setLoading(true);
             setError(null);
-            console.log('Starting game with:', { age: grade, count: problemCount });
             
-            const problems = await educationService.getProblems(grade, problemCount);
+            // 将自定义规则字符串转换为数组
+            const rulesArray = customRules
+                ? customRules.split('\n').filter(rule => rule.trim())
+                : null;
+            
+            const problems = await educationService.getProblems(
+                grade,
+                problemCount,
+                rulesArray  // 传入规则数组
+            );
+            
             console.log('Received problems:', problems);
             
             if (!problems || problems.length === 0) {
@@ -481,7 +493,7 @@ function MathGame() {
             className={`p-2 rounded ${isSpeaking ? 'bg-red-500' : 'bg-blue-500'} text-white`}
             title={isSpeaking ? 'Stop' : 'Read question'}
         >
-            {isSpeaking ? 'Stop' : 'Read'} 🔊
+            {isSpeaking ? 'Stop' : 'Read'} ���
         </button>
     );
 
@@ -550,14 +562,34 @@ function MathGame() {
 
     // 修改游戏结束处理
     const handleGameEnd = () => {
+        // 先清除所有状态
+        setCurrentProblem(null);
+        setUserAnswer('');
+        setFeedback('');
+        setExplanation('');
+        setShowHint(false);
+        setHint('');
+        
+        // 显示最终分数
         const finalFeedback = `Gratulerer! Du har fullført alle oppgavene! Din poengsum: ${score}/${problemCount}`;
         setFeedback(finalFeedback);
         speak(finalFeedback);
         
-        // 添���延迟，让用户看到最终分数
+        // 使用 setTimeout 延迟重置游戏
         setTimeout(() => {
-            resetGame();
-            setGameStarted(false);
+            try {
+                // 清除游戏状态
+                setGameStarted(false);
+                setProblems([]);
+                setCurrentIndex(0);
+                setScore(0);
+                setCanMoveNext(false);
+                
+                // 清除本地存储
+                localStorage.removeItem('currentBatchId');
+            } catch (error) {
+                console.error('Error resetting game:', error);
+            }
         }, 3000);
     };
 
@@ -599,6 +631,21 @@ function MathGame() {
                                 value={problemCount}
                                 onChange={(e) => setProblemCount(Math.min(100, parseInt(e.target.value) || 1))}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Egendefinerte regler (valgfritt):
+                                <span className="text-xs text-gray-500 ml-2">
+                                    En regel per linje
+                                </span>
+                            </label>
+                            <textarea
+                                value={customRules}
+                                onChange={(e) => setCustomRules(e.target.value)}
+                                placeholder="Skriv inn egendefinerte regler her..."
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
+                                rows={4}
                             />
                         </div>
                         <button

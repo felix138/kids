@@ -133,10 +133,7 @@ async def login(
         raise
     except Exception as e:
         logger.error(f"Login error: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="En feil oppstod under pålogging"
-        )
+        raise
 
 # 创建访问令牌
 def create_access_token(data: dict, expires_delta: timedelta = None):

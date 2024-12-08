@@ -96,11 +96,14 @@ class MathProblemsResponse(BaseModel):
 async def get_math_problems(
     age: int = 6, 
     count: int = 10,
+    rules: str = None,
     current_user: User = Depends(get_current_user)
 ):
     """获取数学题目"""
     try:
-        logger.info(f"Starting get_math_problems with age={age}, count={count}")
+        # 解析规则字符串为列表
+        rules_list = json.loads(rules) if rules else None
+        logger.info(f"Starting get_math_problems with age={age}, count={count}, rules={rules_list}")
         
         # 生成新的批次ID
         batch_id = str(hash(f"{age}_{count}_{time.time()}"))
@@ -132,7 +135,7 @@ async def get_math_problems(
         
         # 启动异步生成剩余题目
         asyncio.create_task(
-            generate_remaining_problems(age, count - initial_count, initial_count, batch_id)
+            generate_remaining_problems(age, count - initial_count, initial_count, batch_id, rules_list)
         )
         
         # 确保返回的是有效的响应格式
@@ -151,7 +154,13 @@ async def get_math_problems(
             detail="Kunne ikke generere oppgaver"
         )
 
-async def generate_remaining_problems(age: int, remaining_count: int, start_id: int, batch_id: str):
+async def generate_remaining_problems(
+    age: int, 
+    remaining_count: int, 
+    start_id: int, 
+    batch_id: str,
+    rules: list = None
+):
     """异步生成剩余题目"""
     try:
         # 计算题目分配
@@ -171,7 +180,7 @@ async def generate_remaining_problems(age: int, remaining_count: int, start_id: 
         if current_word_count < word_target:
             try:
                 word_count = word_target - current_word_count
-                word_problems = await generate_problems_batch(age, word_count)
+                word_problems = await generate_problems_batch(age, word_count, rules)
                 logger.debug(f"Generated {len(word_problems)} word problems")
                 
                 # 为每个应用题添加ID和批次ID
@@ -330,7 +339,7 @@ def generate_basic_problem(age: int, problem_id: int) -> dict:
     logger.debug(f"Generating basic problem for age {age}, problem_id {problem_id}")
     
     try:
-        # 根据年龄设置数字围和运算类型
+        # 根据年龄设置数字和运算类型
         if age <= 7:  # 6-7岁
             max_num = 20 if age == 6 else 50
             operations = ['+', '-']  # 仅加减法
@@ -456,10 +465,10 @@ def generate_word_problem_sync(age: int) -> dict:
         answer = num1  # 时间差
     
     elif problem_type == 'measurement':
-        if 'areal' in template:  # 面积问题
+        if 'areal' in template:  # 面积问
             answer = num1 * num2
         else:  # 分割问题
-            if num2 == 0:  # 避免除以零
+            if num2 == 0:  # 避免除零
                 num2 = random.randint(1, 5)
             answer = num1 / num2
     
@@ -587,7 +596,8 @@ def generate_basic_explanation(request: ExplanationRequest) -> dict:
 async def generate_word_problem_explanation(request: ExplanationRequest) -> dict:
     """生成应用题的解释"""
     try:
-        logger.debug(f"Generating word problem explanation for: {request}")
+        logger.debug("=== Starting Math Explanation Generation ===")
+        logger.debug(f"Request: {request}")
         
         # 构建提示词，更注重知识点和解题思路
         prompt = f"""
@@ -598,28 +608,27 @@ async def generate_word_problem_explanation(request: ExplanationRequest) -> dict
         
         Gi følgende i JSON-format:
         {{
-            "knowledge_point": "Forklar det viktigste matematiske konseptet i oppgaven",
-            "explanation": "Detaljert forklaring av løsningsmetoden, steg for steg",
-            "tips": [
-                "3-4 konkrete tips for å løse slike oppgaver",
-                "Fokuser på problemløsningsstrategier"
-            ],
-            "solution_steps": [
-                "Liste over spesifikke trinn for å løse denne oppgaven",
-                "Start med hva vi vet",
-                "Hvordan vi bruker informasjonen",
-                "Hvordan vi kommer fram til svaret"
-            ],
-            "similar_problem": {{
-                "question": "Et lignende eksempel",
-                "solution": "Løsning på eksempelet"
-            }}
+            "problems": [
+                {{
+                    "question": "{request.question}",
+                    "answer": {request.answer},
+                    "type": "{request.type}",
+                    "knowledge_point": "Det viktigste matematiske konseptet",
+                    "explanation": "Detaljert forklaring av løsningsmetoden",
+                    "tips": [
+                        "3-4 konkrete tips"
+                    ],
+                    "solution_steps": [
+                        "Spesifikke trinn for å løse oppgaven"
+                    ],
+                    "similar_problem": {{
+                        "question": "Et lignende eksempel",
+                        "solution": "Løsning på eksempelet"
+                    }}
+                }}
+            ]
         }}
-        
-        Bruk enkelt språk og fokuser på å forklare tankegangen.
         """
-        
-        logger.debug(f"Sending prompt to Grok: {prompt}")
         
         try:
             response = await grok_client.generate_content(prompt)
@@ -627,60 +636,45 @@ async def generate_word_problem_explanation(request: ExplanationRequest) -> dict
             
             try:
                 explanation_data = json.loads(response)
-                logger.debug(f"Parsed explanation data: {explanation_data}")
-                
-                return {
-                    'knowledge_point': explanation_data.get('knowledge_point', 
-                        'La oss forstå det grunnleggende konseptet først.'),
-                    'explanation': explanation_data.get('explanation', 
-                        'La oss løse dette steg for steg.'),
-                    'tips': explanation_data.get('tips', [
-                        'Les oppgaven nøye',
-                        'Identifiser viktig informasjon',
-                        'Lag en plan for løsningen',
-                        'Sjekk svaret ditt'
-                    ]),
-                    'solution_steps': explanation_data.get('solution_steps', [
-                        'Forstå hva oppgaven spør om',
-                        'Finn relevant informasjon',
-                        'Velg riktig metode',
-                        'Regn ut svaret'
-                    ]),
-                    'similar_problem': explanation_data.get('similar_problem', {
-                        'question': 'Her er et lignende eksempel...',
-                        'solution': 'Slik løser vi det...'
-                    })
-                }
+                if explanation_data.get('problems') and len(explanation_data['problems']) > 0:
+                    problem = explanation_data['problems'][0]
+                    return {
+                        'knowledge_point': problem.get('knowledge_point', ''),
+                        'explanation': problem.get('explanation', ''),
+                        'tips': problem.get('tips', []),
+                        'solution_steps': problem.get('solution_steps', []),
+                        'similar_problem': problem.get('similar_problem', {})
+                    }
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse Grok response: {e}")
-                raise
                 
         except Exception as e:
             logger.error(f"Error calling Grok API: {e}")
-            raise
             
     except Exception as e:
         logger.error(f"Error in generate_word_problem_explanation: {e}")
-        return {
-            'knowledge_point': 'La oss forstå det grunnleggende konseptet først.',
-            'explanation': 'La oss løse dette steg for steg.',
-            'tips': [
-                'Les oppgaven nøye',
-                'Identifiser viktig informasjon',
-                'Lag en plan for løsningen',
-                'Sjekk svaret ditt'
-            ],
-            'solution_steps': [
-                'Forstå hva oppgaven spør om',
-                'Finn relevant informasjon',
-                'Velg riktig metode',
-                'Regn ut svaret'
-            ],
-            'similar_problem': {
-                'question': 'Her er et lignende eksempel...',
-                'solution': 'Slik løser vi det...'
-            }
+        
+    # 如果出错，返回默认解释
+    return {
+        'knowledge_point': 'La oss forstå det grunnleggende konseptet først.',
+        'explanation': 'La oss løse dette steg for steg.',
+        'tips': [
+            'Les oppgaven nøye',
+            'Identifiser viktig informasjon',
+            'Lag en plan for løsningen',
+            'Sjekk svaret ditt'
+        ],
+        'solution_steps': [
+            'Forstå hva oppgaven spør om',
+            'Finn relevant informasjon',
+            'Velg riktig metode',
+            'Regn ut svaret'
+        ],
+        'similar_problem': {
+            'question': 'Her er et lignende eksempel...',
+            'solution': 'Slik løser vi det...'
         }
+    }
 
 @router.get("/math/similar")
 async def get_similar_problems(
@@ -705,18 +699,16 @@ async def get_similar_problems(
         logger.error(f"Error generating similar problems: {e}")
         return []
 
-def create_word_problem_prompt(age: int) -> str:
+def create_word_problem_prompt(age: int, custom_rules: list = None) -> str:
     """
     建应用题生成提示词
     
     参数:
         age (int): 学生年龄
-        
-    返回:
-        str: 提示词
+        custom_rules (list, optional): 自定义规则列表
     """
     # 根据年龄设置题目参数
-    if age <= 7:  # 6-7岁
+    if age <= 6:  # 6-7岁
         number_range = {
             "min": 1,
             "max": 20,
@@ -724,43 +716,109 @@ def create_word_problem_prompt(age: int) -> str:
         }
         operations = "only addition and subtraction"
         allowed_types = ["shopping", "sharing"]
-        rules = [
+        
+        # 数字范围规则
+        number_rules = [
+            f"Each number must be between {number_range['min']} and {number_range['max']}",
+            f"The sum must not exceed {number_range['sum_max']}"
+        ]
+        
+        # 使用自定义规则或默认规则
+        default_rules = [
             "ONLY use whole numbers (no fractions or decimals)",
             "ONLY use addition and subtraction",
-            f"Each number must be between {number_range['min']} and {number_range['max']}",
-            f"The sum must not exceed {number_range['sum_max']}",
             "Use simple shopping or sharing scenarios",
             "Ensure final answer is a positive whole number"
         ]
-    elif age <= 9:  # 8-9岁
+        rules = (custom_rules if custom_rules is not None else default_rules) + number_rules
+
+    elif age == 7:
         number_range = {
             "min": 1,
             "max": 100,
             "sum_max": 100
         }
-        operations = "addition, subtraction, and simple multiplication"
-        allowed_types = ["shopping", "sharing", "time"]
-        rules = [
-            "Use whole numbers only",
-            "Include simple multiplication up to 10",
-            f"Numbers must be between {number_range['min']} and {number_range['max']}",
-            "Use age-appropriate scenarios"
+        operations = "only addition and subtraction"
+        allowed_types = ["shopping", "sharing"]
+        
+        # 数字范围规则
+        number_rules = [
+            f"Each number must be between {number_range['min']} and {number_range['max']}",
+            f"The sum must not exceed {number_range['sum_max']}"
         ]
-    else:  # 10岁以上
+        
+        # 合并所有规则
+        default_rules = [
+            "ONLY use whole numbers (no fractions or decimals)",
+            "ONLY use addition and subtraction",
+            "Use simple shopping or sharing scenarios",
+            "Ensure final answer is a positive whole number"
+        ] 
+        rules = (custom_rules if custom_rules is not None else default_rules) + number_rules 
+    elif age == 8:
         number_range = {
             "min": 1,
-            "max": 1000,
-            "sum_max": 1000
+            "max": 100,
+            "sum_max": 100
+        }
+        operations = "only addition and subtraction and multiplication"
+        allowed_types = ["shopping", "sharing"]
+        
+        # 数字范围规则
+        number_rules = [
+            f"Each number must be between {number_range['min']} and {number_range['max']}",
+            f"The sum must not exceed {number_range['sum_max']}"
+        ]
+        
+        # 合并所有规则
+        default_rules = [
+            "ONLY use whole numbers (no fractions or decimals)",
+            "ONLY use addition and subtraction",
+            "Use simple shopping or sharing scenarios",
+            "Ensure final answer is a positive whole number"
+        ] + number_rules  # 使用列表拼接而不是嵌套 
+        rules = (custom_rules if custom_rules is not None else default_rules) + number_rules 
+    elif age == 9:  # 8-9岁
+        number_range = {
+            "min": 1,
+            "max": 100,
+            "sum_max": 100
+        }
+        operations = "addition, subtraction,division, and simple multiplication"
+        allowed_types = ["shopping", "sharing", "time"]
+        number_rules =[f"Numbers must be between {number_range['min']} and {number_range['max']}"]
+        default_rules = [
+            "Use whole numbers only",
+            "Include simple multiplication up to 10",
+            "Use age-appropriate scenarios"            
+        ] 
+        rules = (custom_rules if custom_rules is not None else default_rules) + number_rules 
+    else:  # 10岁以上
+        number_range = {
+            "min": 0.00,
+            "max": 1000.00,
+            "sum_max": 2000.00
         }
         operations = "all basic operations"
-        allowed_types = ["shopping", "sharing", "time", "measurement","Distance and Speed","Arrangements and Combinations"]
-        rules = [
-            "Can use all basic operations",
-            "Can include simple decimals",
-            f"Numbers must be between {number_range['min']} and {number_range['max']}",
-            "Use real-life scenarios",
-            "Add and subtract fractions"
+        allowed_types = ["shopping", "sharing", "time", "measurement","distance_and_speed","arrangements_and_combinations"]
+        
+        # 修改数字范围规则，支持整数、小数和分数
+        number_rules = [
+            f"Numbers can be:",
+            f"- Whole numbers between 0 and 1000",
+            f"- Decimals between {number_range['min']:.2f} and {number_range['max']:.2f} (up to 2 decimal places)",
+            f"- Simple fractions (like 1/2, 1/3, 1/4, 2/3, 3/4)",
+            f"The result must not exceed {number_range['sum_max']:.2f}"
         ]
+        
+        default_rules = [
+            "Can use all basic operations",
+            "Can include decimals and fractions",
+            "Use real-life scenarios",
+            "Mix different number types in problems"
+        ]
+        rules = (custom_rules if custom_rules is not None else default_rules) + number_rules
+
 
     # 建提示词
     prompt = f"""Generate math word problems in Norwegian (Bokmål) for a {age}-year-old child.
@@ -785,20 +843,15 @@ def create_word_problem_prompt(age: int) -> str:
 
     return prompt
 
-async def generate_problems_batch(age: int, count: int) -> List[dict]:
-    """
-    批量成应用题
-    
-    参数:
-        age (int): 学生年龄
-        count (int): 需要生成的题目数量
-        
-    返回:
-        List[dict]: 生成的应用题列表
-    """
+async def generate_problems_batch(
+    age: int, 
+    count: int, 
+    rules: list = None  # 接收列表类型的规则
+) -> List[dict]:
+    """批量生成应用题"""
     try:
-        # 获取提示词
-        prompt = create_word_problem_prompt(age)
+        # 直接传递列表类型的规则
+        prompt = create_word_problem_prompt(age, custom_rules=rules)
         
         # 调用 Grok API 生成题目
         response = await grok_client.generate_content(prompt, count)
@@ -828,16 +881,7 @@ async def generate_problems_batch(age: int, count: int) -> List[dict]:
         return []
 
 def validate_problem(problem: dict, age: int) -> bool:
-    """
-    验证生成的题目是否有效
-    
-    参数:
-        problem (dict): 题目数据
-        age (int): 学生年龄
-        
-    返回:
-        bool: 题目是否有效
-    """
+    """验证生成的题目是否有效"""
     try:
         # 检查必需字段
         required_fields = ['question', 'answer', 'type', 'sub_type']
@@ -849,30 +893,92 @@ def validate_problem(problem: dict, age: int) -> bool:
         if not isinstance(problem['answer'], (int, float)):
             logger.error(f"Invalid answer type in problem: {problem}")
             return False
+
+        # 根据年龄验证题目
+        if age <= 6:  # 6岁
+            # 检查数字范围
+            if not (0 <= float(problem['answer']) <= 20):
+                logger.error(f"Answer out of range for age {age}: {problem['answer']}")
+                return False
+            # 检查题目类型
+            valid_subtypes = ['shopping', 'sharing']
+            if problem['sub_type'] not in valid_subtypes:
+                logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")
+                return False
+
+        elif age == 7:
+            # 检查数字范围
+            if not (0 <= float(problem['answer']) <= 100):
+                logger.error(f"Answer out of range for age {age}: {problem['answer']}")
+                return False
+            # 检查题目类型
+            valid_subtypes = ['shopping', 'sharing']
+            if problem['sub_type'] not in valid_subtypes:
+                logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")
+                return False
+
+        elif age == 8:
+            # 检查数字范围
+            if not (0 <= float(problem['answer']) <= 100):
+                logger.error(f"Answer out of range for age {age}: {problem['answer']}")
+                return False
+            # 检查题目类型
+            valid_subtypes = ['shopping', 'sharing']
+            if problem['sub_type'] not in valid_subtypes:
+                logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")
+                return False
+
+        elif age == 9:
+            # 检查数字范围
+            if not (0 <= float(problem['answer']) <= 100):
+                logger.error(f"Answer out of range for age {age}: {problem['answer']}")
+                return False
+            # 检查题目类型
+            valid_subtypes = ['shopping', 'sharing', 'time']
+            if problem['sub_type'] not in valid_subtypes:
+                logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")
+                return False
+
+        else:  # 10岁以上
+            # 检查答案格式和范围
+            answer_str = str(problem['answer'])
             
-        # 根据年龄检查答案范围
-        answer = float(problem['answer'])
-        if age <= 7:
-            if not (0 <= answer <= 20):
+            # 处理分数
+            if '/' in answer_str:
+                try:
+                    num, denom = map(int, answer_str.split('/'))
+                    answer = num / denom
+                except (ValueError, ZeroDivisionError):
+                    logger.error(f"Invalid fraction format: {answer_str}")
+                    return False
+            else:
+                answer = float(answer_str)
+            
+            # 检查范围
+            if not (0.00 <= answer <= 10000.00):
                 logger.error(f"Answer out of range for age {age}: {answer}")
                 return False
-        elif age <= 9:
-            if not (0 <= answer <= 100):
-                logger.error(f"Answer out of range for age {age}: {answer}")
+            
+            # 如果是小数，检查小数位数
+            if isinstance(answer, float) and not answer.is_integer():
+                decimal_str = str(answer).split('.')[-1]
+                if len(decimal_str) > 2:
+                    logger.error(f"Too many decimal places in answer: {answer}")
+                    return False
+            
+            # 检查题目类型
+            valid_subtypes = [
+                'shopping', 
+                'sharing', 
+                'time', 
+                'measurement',
+                'distance_and_speed',
+                'arrangements_and_combinations'
+            ]
+            if problem['sub_type'] not in valid_subtypes:
+                logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")
                 return False
-                
-        # 检查题目类型
-        valid_types = ['word_problem']
-        if problem['type'] not in valid_types:
-            logger.error(f"Invalid problem type: {problem['type']}")
-            return False
-            
-        # 检查子类型
-        valid_subtypes = ['shopping', 'sharing', 'time', 'measurement']
-        if problem['sub_type'] not in valid_subtypes:
-            logger.error(f"Invalid problem sub_type: {problem['sub_type']}")
-            return False
-            
+
         return True
         
     except Exception as e:
@@ -887,13 +993,13 @@ async def get_remaining_problems(
     """获取批次中的剩余题目"""
     try:
         logger.debug(f"Getting remaining problems for batch {batch_id}")
-        logger.debug(f"Available batches: {_batch_problems.keys()}")
         
         # 获取批次
         batch = _batch_problems.get(batch_id)
         if not batch:
             logger.error(f"Batch {batch_id} not found")
-            raise HTTPException(status_code=404, detail="Invalid batch")
+            # 返回空列表而不是抛出错误
+            return []
             
         # 获取所有题目
         problems = list(batch.values())
@@ -907,4 +1013,5 @@ async def get_remaining_problems(
         
     except Exception as e:
         logger.error(f"Error getting remaining problems: {e}")
-        raise HTTPException(status_code=500, detail="Could not get remaining problems")
+        # 返回空列表而不是抛出错误
+        return []

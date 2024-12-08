@@ -12,20 +12,14 @@ load_dotenv()
 
 app = FastAPI(title="AI Utdanningsassistent for Barn")
 
-# 配置CORS - 修改这部分
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://192.168.1.40:3000",
-    "http://localhost:8000",
-    "http://192.168.1.40:8000"
-]
+# 配置CORS
+origins = settings.CORS_ORIGINS.split(',')
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600
