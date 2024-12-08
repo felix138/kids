@@ -372,3 +372,37 @@ WHERE users.username = %(username_1)s
 2024-12-08 02:23:20,300 - app.core.logger - ERROR - Login error: name 'db' is not defined
 2024-12-08 02:25:59,079 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=None
 2024-12-08 02:25:59,080 - app.core.logger - INFO - Returning initial 3 problems with batch_id 7290355471445663888
+2024-12-08 10:11:28,299 - app.core.logger - ERROR - Error creating database tables: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2024-12-08 10:35:35,815 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only 2D Area']
+2024-12-08 10:35:35,815 - app.core.logger - INFO - Returning initial 3 problems with batch_id -3552381254708216286
+2024-12-08 10:38:06,736 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Calculation of Areas of Plane Geometric Shapes']
+2024-12-08 10:38:06,737 - app.core.logger - INFO - Returning initial 3 problems with batch_id -699841687190008464
+2024-12-08 10:38:17,738 - app.core.logger - ERROR - Too many decimal places in answer: 0.375
+2024-12-08 10:39:56,764 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only measurement type']
+2024-12-08 10:39:56,764 - app.core.logger - INFO - Returning initial 3 problems with batch_id -8991267540979769348
+2024-12-08 10:40:09,382 - app.core.logger - ERROR - Too many decimal places in answer: 1.875
+2024-12-08 10:40:09,383 - app.core.logger - ERROR - Too many decimal places in answer: 0.375
+2024-12-08 10:41:29,581 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['Plane geometry']
+2024-12-08 10:41:29,582 - app.core.logger - INFO - Returning initial 3 problems with batch_id 6709570089028380920
+2024-12-08 10:48:03,538 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['plane geometry']
+2024-12-08 10:48:03,538 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8424801805598066645
+2024-12-08 10:48:15,437 - app.core.logger - ERROR - Invalid problem sub_type for age 10: plane geometry
+2024-12-08 10:54:22,034 - app.core.logger - ERROR - Batch 8424801805598066645 not found
+2024-12-08 10:54:22,044 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 10:54:22,045 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8793916489556846893
+2024-12-08 10:54:40,305 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=['only plane_geometry']
+2024-12-08 10:54:40,305 - app.core.logger - INFO - Returning initial 3 problems with batch_id 1681300781414575374
+2024-12-08 10:54:53,084 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only plane_geometry']
+2024-12-08 10:54:53,084 - app.core.logger - INFO - Returning initial 3 problems with batch_id 3709228539533223598
+2024-12-08 10:55:05,983 - app.core.logger - ERROR - Too many decimal places in answer: 19.625
+2024-12-08 11:02:59,521 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only geometric_volume']
+2024-12-08 11:02:59,521 - app.core.logger - INFO - Returning initial 3 problems with batch_id 8306953057539769641
+2024-12-08 11:04:07,768 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only geometric_volume']
+2024-12-08 11:04:07,768 - app.core.logger - INFO - Returning initial 3 problems with batch_id -9203733894621637814
+2024-12-08 11:19:24,663 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=None
+2024-12-08 11:19:24,664 - app.core.logger - INFO - Returning initial 3 problems with batch_id 1392604756430361645

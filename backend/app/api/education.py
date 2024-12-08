@@ -494,7 +494,7 @@ def generate_word_problem_sync(age: int) -> dict:
     }
 
 def get_difficulty_by_age(age: int) -> str:
-    """根据年龄返回难度级别"""
+    """根据年龄返回难度等级"""
     if age <= 7:
         return "beginner"
     elif age <= 9:
@@ -800,7 +800,16 @@ def create_word_problem_prompt(age: int, custom_rules: list = None) -> str:
             "sum_max": 2000.00
         }
         operations = "all basic operations"
-        allowed_types = ["shopping", "sharing", "time", "measurement","distance_and_speed","arrangements_and_combinations"]
+        allowed_types = [
+            "shopping", 
+            "sharing", 
+            "time", 
+            "measurement",
+            "distance_and_speed",
+            "arrangements_and_combinations",
+            "plane_geometry",
+            "geometric_volume"
+        ]
         
         # 修改数字范围规则，支持整数、小数和分数
         number_rules = [
@@ -973,7 +982,9 @@ def validate_problem(problem: dict, age: int) -> bool:
                 'time', 
                 'measurement',
                 'distance_and_speed',
-                'arrangements_and_combinations'
+                'arrangements_and_combinations',
+                'plane_geometry',
+                'geometric_volume'
             ]
             if problem['sub_type'] not in valid_subtypes:
                 logger.error(f"Invalid problem sub_type for age {age}: {problem['sub_type']}")

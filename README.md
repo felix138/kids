@@ -107,7 +107,7 @@ barn-ai-assistant/
 │ ├── public/
 │ │ └── index.html
 │ ├── src/
-│ │ ���─ components/
+│ │ �����─ components/
 │ │ │ └── Navbar.js
 │ │ ├── pages/
 │ │ │ ├── Home.js
@@ -196,7 +196,7 @@ Du må også opprette environment.yml-filen i prosjektets rotkatalog, med innhol
   - 包含两个主要功能区：
     - 互动故事 (Interaktive Historier)
     - 智力游戏 (Hjernetrim)
-  - 提供详细的功描述���交互按钮
+  - 提供详细���功描述���交互按钮
 
 #### 配置文件
 - `frontend/package.json`
@@ -489,7 +489,7 @@ npm install react-router-dom @types/react-router-do
 - 改进了配置管理
   - 统一使用 .env 配置
   - 支持配置验证
-  - 移除硬编码配置
+  - 移除��编码配置
 
 #### 依��更新
 - FastAPI 升级到 0.100.0+
@@ -565,70 +565,27 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ## 版本更新
 
-### 2024-12-08 版本
-- **认证系统完善**
-  - 完整的用户登录功能
-  - 安全的令牌管理
-  - 统一的错误处理
+### 2024-12-08 版本 (第二次更新)
+- **题型系统扩展**
+  - 新增平面几何题型
+  - 新增几何体积题型
+  - 优化题型验证机制
+  - 完善分配逻辑
 
-- **配置系统优化**
-  - 环境变量配置
-  - CORS 安全配置
-  - 开发环境示例
+- **规则管理优化**
+  - 数据库规则管理
+  - 年龄特定规则配置
+  - 规则显示优化
+  - 配置表结构完善
 
-- **技术栈更新**
-  - FastAPI 0.100.0+
-  - React 18.2.0+
-  - SQLAlchemy 1.4.41+
-  - JWT 认证
-
-- **部署说明**
-  ```bash
-  # 后端启动
-  uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  # 前端启动
-  npm start
+- **数据库更新**
+  ```sql
+  -- 规则映射表
+  CREATE TABLE tb_customer_rules_map (
+      customer_rules_id SERIAL PRIMARY KEY,
+      age INTEGER NOT NULL,
+      customer_rules TEXT NOT NULL,
+      display_rules TEXT NOT NULL
+  );
   ```
-
-- **环境要求**
-  - Python 3.8+
-  - Node.js 14+
-  - PostgreSQL 12+
-  - 环境变量配置
-
-- **数学应用题生成优化**
-  - 支持多种数字类型（整数、小数、分数）
-  - 年龄分级的题目生成系统
-  - 完善的验证规则机制
-  - 优化的提示词系统
-
-- **题目生成规则**
-  ```python
-  # 规则示例
-  number_rules = [
-      "Numbers can be:",
-      "- Whole numbers between 0 and 1000",
-      "- Decimals between 0.00 and 1000.00 (up to 2 decimal places)",
-      "- Simple fractions (like 1/2, 1/3, 1/4, 2/3, 3/4)"
-  ]
-  ```
-
-- **规则系统优化**
-  - 支持自定义规则输入
-  - 灵活的规则组合机制
-  - 实时规则验证
-  - 示例：
-    ```javascript
-    // 规则处理示例
-    const rulesArray = customRules
-        ? customRules.split('\n').filter(rule => rule.trim())
-        : null;
-    ```
-
-- **用户界面改进**
-  - 添加规则输入界面
-  - 优化规则显示格式
-  - 提供规则输入指导
-  - 支持规则实时预览
 
