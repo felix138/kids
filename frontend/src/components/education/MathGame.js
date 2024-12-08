@@ -28,6 +28,20 @@ function MathGame() {
     const [lastWrongType, setLastWrongType] = useState(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [customRules, setCustomRules] = useState('');  // 添加新状态
+    const [availableRules, setAvailableRules] = useState([]);
+
+    // 添加useEffect来加载规则
+    useEffect(() => {
+        const loadRules = async () => {
+            try {
+                const rules = await educationService.getRules(grade);
+                setAvailableRules(rules);
+            } catch (error) {
+                console.error('Error loading rules:', error);
+            }
+        };
+        loadRules();
+    }, [grade]);
 
     // 语音合成
     const stopSpeaking = () => {
@@ -493,7 +507,7 @@ function MathGame() {
             className={`p-2 rounded ${isSpeaking ? 'bg-red-500' : 'bg-blue-500'} text-white`}
             title={isSpeaking ? 'Stop' : 'Read question'}
         >
-            {isSpeaking ? 'Stop' : 'Read'} ���
+            {isSpeaking ? 'Stop' : 'Read'} 
         </button>
     );
 
@@ -635,18 +649,23 @@ function MathGame() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Egendefinerte regler (valgfritt):
+                                Egendefinerte regler:
                                 <span className="text-xs text-gray-500 ml-2">
-                                    En regel per linje
+                                    Velg regeltype
                                 </span>
                             </label>
-                            <textarea
+                            <select
                                 value={customRules}
                                 onChange={(e) => setCustomRules(e.target.value)}
-                                placeholder="Skriv inn egendefinerte regler her..."
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200"
-                                rows={4}
-                            />
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm 
+                                           focus:border-blue-300 focus:ring focus:ring-blue-200"
+                            >
+                                {availableRules.map((rule) => (
+                                    <option key={rule.value} value={rule.value}>
+                                        {rule.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <button
                             onClick={handleStartGame}

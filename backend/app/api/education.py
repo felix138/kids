@@ -5,11 +5,14 @@ import random
 from ..core.grok_client import grok_client
 from ..core.logger import logger
 from ..core.config import settings
+from ..core.database import get_db
 import json
 import time
 import asyncio
 from ..api.auth import get_current_user
 from ..models.user import User
+from sqlalchemy.orm import Session
+from sqlalchemy import text  # 添加这个导入
 
 router = APIRouter()
 
@@ -315,7 +318,7 @@ async def get_quiz_questions(category: Optional[str] = None):
     ]
     return questions
 
-# 检查言答案
+# 检查答案
 @router.post("/language/check")
 async def check_language_answer(
     exercise_id: int, 
@@ -1026,3 +1029,31 @@ async def get_remaining_problems(
         logger.error(f"Error getting remaining problems: {e}")
         # 返回空列表而不是抛出错误
         return []
+
+@router.get("/math/rules/{age}")
+async def get_available_rules(
+    age: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取指定年龄可用的规则"""
+    try:
+        # 使用 text() 包装 SQL 查询
+        query = text("""
+            SELECT customer_rules, display_rules 
+            FROM tb_customer_rules_map 
+            WHERE age = :age
+        """)
+        
+        result = db.execute(query, {"age": age}).fetchall()
+        
+        return [
+            {
+                "value": row[0],  # customer_rules
+                "label": row[1]   # display_rules
+            }
+            for row in result
+        ]
+    except Exception as e:
+        logger.error(f"Error getting rules for age {age}: {e}")
+        raise HTTPException(status_code=500, detail="Could not fetch rules")

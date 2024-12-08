@@ -406,3 +406,6 @@ connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection re
 2024-12-08 11:04:07,768 - app.core.logger - INFO - Returning initial 3 problems with batch_id -9203733894621637814
 2024-12-08 11:19:24,663 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=None
 2024-12-08 11:19:24,664 - app.core.logger - INFO - Returning initial 3 problems with batch_id 1392604756430361645
+2024-12-08 11:53:37,857 - app.core.logger - ERROR - Error getting rules for age 6: Textual SQL expression '\n            SELECT custo...' should be explicitly declared as text('\n            SELECT custo...')
+2024-12-08 11:53:37,864 - app.core.logger - ERROR - Error getting rules for age 6: Textual SQL expression '\n            SELECT custo...' should be explicitly declared as text('\n            SELECT custo...')
+2024-12-08 11:53:41,676 - app.core.logger - ERROR - Error getting rules for age 10: Textual SQL expression '\n            SELECT custo...' should be explicitly declared as text('\n            SELECT custo...')

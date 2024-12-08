@@ -140,3 +140,5 @@ def init_problem_types_mappings(db_session):
         db_session.rollback()
         logger.error(f"Error initializing problem types mappings: {e}")
         raise 
+
+   

@@ -160,7 +160,7 @@ const speak = (text) => {
 #### 3. 功能改进
 - 添加了朗读状态指示
 - 实现了朗读切换功能
-- 优化了组件生命周期处理
+- 优化了组件生命周��处理
 - 改进了用户界面反馈
 
 #### 4. 已知问题
@@ -226,7 +226,7 @@ cp backend/.env
 1. 问题修复
    - 修复了应用题不显示的问题
    - 改进了批次管理机制
-   - 优化了答案验证逻辑
+   - 优化了答案验���逻辑
    - 添加了更详细的日志记录
 
 2. 代码更新
@@ -428,7 +428,7 @@ DEBUG:app.api.education:Word problems: {word_count}/{word_target}
   - 添加了文件处理器
   - 添加了控制台处理器
   - 实现了日志分割
-  - 添加了详细的调���信息
+  - 添加了详细的调用信息
 
 - **日志示例**
   ```python
@@ -480,8 +480,8 @@ DEBUG:app.api.education:Word problems: {word_count}/{word_target}
   - 完善了认证中间件
 
 - **API路径规范化**
-  - 统一使用 `/api/education` 前缀
-  - 修正了���学题目相关路径
+  - 统一使��� `/api/education` 前缀
+  - 修正了学题目相关路径
   - 修正了语言练习相关路径
   - 优化了路由结构
 
@@ -652,7 +652,7 @@ setExplanation({
 3. 优化错误处理机制
 4. 改进日志记录系统
 
-#### 5. 数学��用题生成优化
+#### 5. 数学应用题生成优化
 - **提示词系统改进**
   - 支持整数、小数和分数的混合使用
   - 根据年龄调整数字范围和运算类型
@@ -708,3 +708,47 @@ setExplanation({
 - [x] 添加了几何类题目支持
 - [x] 优化了规则管理系统
 - [x] 完善了数据库结构
+
+### 2024-12-08 更新 (第三次)
+
+#### 1. 规则系统重构
+- **数据库查询优化**
+  - 使用 text() 包装 SQL 查询
+  - 修复了 SQLAlchemy 查询错误
+  - 优化了规则获取逻辑
+  - 完善了错误处理
+
+- **API 端点改进**
+  ```python
+  @router.get("/math/rules/{age}")
+  async def get_available_rules(
+      age: int,
+      current_user: User = Depends(get_current_user),
+      db: Session = Depends(get_db)
+  ):
+      """获取指定年龄可用的规则"""
+      query = text("""
+          SELECT customer_rules, display_rules 
+          FROM tb_customer_rules_map 
+          WHERE age = :age
+      """)
+  ```
+
+#### 2. 前端交互优化
+- **规则选择改进**
+  - 将文本输入框改为下拉菜单
+  - 根据年龄动态加载规则
+  - 优化了规则显示格式
+  - 改进了用户体验
+
+#### 3. 已修复问题
+- [x] SQL 查询格式错误
+- [x] 规则加载 500 错误
+- [x] 数据库连接问题
+- [x] 前端显示格式问题
+
+#### 4. 下一步计划
+1. 优化规则加载性能
+2. 添加规则缓存机制
+3. 完善错误提示
+4. 添加规则预览功能

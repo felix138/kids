@@ -230,5 +230,20 @@ export const educationService = {
             Logger.error('Error getting remaining problems:', error);
             return [];
         }
+    },
+
+    getRules: async (age) => {
+        try {
+            const response = await axios.get(`${API_URL}/education/math/rules/${age}`, {
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error getting rules:', error);
+            return [];
+        }
     }
 }; 
