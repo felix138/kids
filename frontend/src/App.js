@@ -10,11 +10,16 @@ import { authService } from './services/authService';
 
 // 受保护的路由组件
 const ProtectedRoute = ({ children }) => {
-    const user = authService.getCurrentUser();
-    if (!user) {
+    try {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            return <Navigate to="/login" />;
+        }
+        return children;
+    } catch (error) {
+        console.error('Protected route error:', error);
         return <Navigate to="/login" />;
     }
-    return children;
 };
 
 function App() {

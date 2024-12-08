@@ -15,7 +15,7 @@ engine = create_engine(
     max_overflow=10,  # 最大溢出连接数
     pool_timeout=30,  # 连接超时时间
     pool_recycle=1800,  # 连接回收时间
-    echo=False  # 是否打印SQL语句
+    echo=True  # 临时开启SQL日志
 )
 
 try:

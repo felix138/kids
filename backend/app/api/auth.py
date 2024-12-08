@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -83,11 +83,13 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 # 用户登录
 @router.post("/auth/login")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
     try:
-        logger.debug(f"Login attempt for user: {form_data.username}")
+        logger.debug(f"Login attempt from: {form_data.username}")
+        logger.debug(f"Request headers: {request.headers}")
         
         # 查找用户
         user = db.query(User).filter(User.username == form_data.username).first()

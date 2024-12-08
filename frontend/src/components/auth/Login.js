@@ -15,9 +15,14 @@ function Login() {
         setError('');
 
         try {
-            await authService.login({ username, password });
-            navigate('/education');
+            const response = await authService.login({ username, password });
+            if (response && response.user) {
+                navigate('/education');
+            } else {
+                throw new Error('Invalid response format');
+            }
         } catch (error) {
+            console.error('Login error:', error);
             setError('Feil brukernavn eller passord');
         } finally {
             setLoading(false);

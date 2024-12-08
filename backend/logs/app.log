@@ -411,3 +411,18 @@ connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection re
 2024-12-08 11:53:41,676 - app.core.logger - ERROR - Error getting rules for age 10: Textual SQL expression '\n            SELECT custo...' should be explicitly declared as text('\n            SELECT custo...')
 2024-12-08 11:56:34,013 - app.core.logger - INFO - Starting get_math_problems with age=10, count=10, rules=['only decimal']
 2024-12-08 11:56:34,014 - app.core.logger - INFO - Returning initial 3 problems with batch_id -5518924296624095438
+2024-12-08 13:36:19,643 - app.core.logger - ERROR - Error creating database tables: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2024-12-08 13:39:57,185 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 13:39:57,185 - app.core.logger - INFO - Returning initial 3 problems with batch_id 2411571107230721412
+2024-12-08 14:26:23,116 - app.core.logger - ERROR - Login error: name 'request' is not defined
+2024-12-08 14:26:35,764 - app.core.logger - ERROR - Login error: name 'request' is not defined
+2024-12-08 14:26:40,476 - app.core.logger - ERROR - Login error: name 'request' is not defined
+2024-12-08 14:26:42,024 - app.core.logger - ERROR - Login error: name 'request' is not defined
+2024-12-08 14:27:15,871 - app.core.logger - ERROR - Login error: name 'request' is not defined
+2024-12-08 14:33:10,945 - app.core.logger - INFO - Starting get_math_problems with age=6, count=10, rules=None
+2024-12-08 14:33:10,946 - app.core.logger - INFO - Returning initial 3 problems with batch_id -950966978631194122
